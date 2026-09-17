@@ -1209,3 +1209,15 @@ What began as a single maker’s cluster of Jetson Nanos and Raspberry Pis becom
 *The eagle perches atop the highest branch, watching the horizons. Níðhöggr gnaws at the roots, keeping the tree honest. Ratatoskr scurries, carrying the words of the worlds. And the Norns, ever at the well of Urðr, weave the fate of intelligence across the globe.*
 
 *May the tree grow forever.*
+
+---
+
+## ☕ Support the Project
+
+If you enjoy my open-source projects and want to help support continued development, research, testing, and experimentation, you can leave a tip through PayPal:
+
+**[Support my work on PayPal.Me](https://www.paypal.com/paypalme/volmarrwyrd)**
+
+Support is always appreciated, but never required. Using, sharing, testing, contributing to, or starring the projects helps too. 🖤⚙️ᚱ
+
+---
