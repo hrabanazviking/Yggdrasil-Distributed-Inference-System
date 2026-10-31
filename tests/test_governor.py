@@ -28,6 +28,7 @@ from pathlib import Path
 
 import pytest
 
+from yggdrasil.census import system_probe_set
 from yggdrasil.governor import (
     GovernorError,
     ResourceGovernor,
@@ -196,9 +197,18 @@ def test_unknown_readings_disable_only_their_own_check():
 
 def test_system_readings_read_this_machine_honestly():
     readings = system_readings()
-    # This VM exposes no thermal sensor (the census says the
-    # same) — unknown, never a cool fiction.
-    assert readings["thermal_c"] is None
+    # Thermal honesty is machine-relative (found at Y-033, when
+    # this suite first ran on Mimir): a machine with no thermal
+    # sensor (this VM) reads None — unknown, never a cool
+    # fiction — and a machine with one (the Pi) reads a real
+    # number. The census probe for the same machine is the
+    # oracle either way.
+    probe_thermal = system_probe_set().thermal_c()
+    if probe_thermal is None:
+        assert readings["thermal_c"] is None
+    else:
+        assert readings["thermal_c"] is not None
+        assert abs(readings["thermal_c"] - probe_thermal) < 5.0
     assert readings["memory_total_bytes"] > 0
     assert 0 <= readings["memory_used_bytes"] <= readings["memory_total_bytes"]
     assert readings["cpu_share_used"] >= 0

@@ -105,13 +105,44 @@ and no engine on the Pi is claimed.
 
 ## The live run on Mimir
 
-*Recorded as an addendum commit directly after this slice
-banks: this code, cloned from the pushed branch into a
-scratch directory on purpleviking1, run there against the
-machine's own census probes and its live neighbour states.
-The addendum records the measured census, the citizen
-report's verdict, and the full test suite's result on ARM —
-or, if any of it fails, the failure exactly as it happened.*
+Run on 2026-10-31 (~03:40–03:55 EDT) against the pushed
+slice commit (`33d5ff4`), cloned from
+`origin/yrsa/growing-the-tree` into a scratch directory on
+purpleviking1 — scratch only: nothing was installed, no
+service was enabled, and the run's identity, store, and keys
+lived under `/tmp` and die with it.
+
+**The citizen run itself** (system census probes — nothing
+injected, `simulated: false`): the factory evaluated Mimir
+**ready**, every gating check passing. The live census read
+aarch64, 4 cores, "Raspberry Pi 5 Model B Rev 1.1",
+15.83 GiB RAM, thermal 49.0 °C at that moment, accelerators
+`[{"kind": "none", "proven": false}]`; the reserve computed
+3.958 GiB. The neighbour observation, measured live by the
+runner (systemctl / listener / device-node reads, handed in
+as data): Samtal **active**, Aurelia **listening** (:8001),
+kiosk **not listening** (:8099), Hailo **absent** — every
+neighbour's `action_taken` remained `none`, and
+`hailo_claim` is `absent`, exactly as the standing rule
+requires. The built citizen then started on its freshly
+provisioned Pi-class identity, joined, loaded the
+hash-pinned fixture model, served a queued task end to end
+(`completed`, text "live pi citizen answer"), answered a
+heartbeat `present`, and closed with **0 failure incidents**.
+
+**The test suite on ARM**: the whole 404-test suite was run
+on the Pi in three groups — 403 passed and **1 failed**:
+`test_governor.py::test_system_readings_read_this_machine_honestly`,
+a Y-028 test that hard-codes the build VM's truth ("this VM
+exposes no thermal sensor, so thermal reads None"). On the
+Pi, which has a sensor, `system_readings()` correctly read
+46.3 °C and the VM-bound assertion failed. That is a test
+defect, not a governor defect — found by this slice's
+on-hardware run and fixed in the addendum commit: the test
+now takes the census probe for the same machine as its
+oracle (None where no sensor exists, a matching real number
+where one does), green on the VM and re-verified on Mimir.
+The citizen's own 12 tests pass on ARM (6.05 s) as on the VM.
 
 ## Not built / not claimed here
 
