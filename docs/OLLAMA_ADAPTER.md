@@ -124,7 +124,7 @@ slices — the Pi (Y-033), the laptop (Y-034), and this VM
 
 ## Not built here
 
-The llama.cpp / OpenAI-compatible adapter (Y-025), hash-verified
+Hash-verified
 model presence (the model store, Y-026 — `list_models()` here
 is Ollama's word, not hash proof), model load/unload slots
 (Y-027), bounded task execution (Y-029 — this adapter runs

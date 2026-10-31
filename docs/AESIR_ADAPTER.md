@@ -81,8 +81,7 @@ The rules binding `discover()` — and therefore the census
 
 ## Not built here
 
-The llama.cpp / OpenAI-compatible adapter (Y-025),
-hash-verified model presence (the model store, Y-026 — a
+Hash-verified model presence (the model store, Y-026 — a
 catalog listing is not hash proof, and Aesir's `model_digest`
 is carried as provenance data, not yet verified against
 on-disk bytes by this mesh), model load/unload slots

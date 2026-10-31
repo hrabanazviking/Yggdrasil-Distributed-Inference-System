@@ -102,12 +102,14 @@ tested deterministically.
 
 ## Not built here
 
-Engine discovery now lands slice by slice (the Ollama
-adapter, Y-023, and the Aesir adapter, Y-024 — its discovery
+Engine discovery has now landed slice by slice (the Ollama
+adapter, Y-023; the Aesir adapter, Y-024 — its discovery
 carries Aesir's own capability-ledger grade into the census,
-never laundered — report their own reachability into the
-census through the collector's callable seams; llama.cpp
-follows at Y-025), no model presence (Y-026, and
+never laundered; and the llama.cpp / OpenAI-compatible
+adapter, Y-025 — both flavours, embed/vision claimed only
+for operator-declared models — all reporting their own
+reachability into the census through the collector's
+callable seams), no model presence (Y-026, and
 only with hash proof), no governor acting on these numbers
 (Y-028 — the governor's thermal decisions cite this telemetry
 at Y-044), no fabric carrying the census to peers (Part III;
