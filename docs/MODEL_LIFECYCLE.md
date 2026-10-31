@@ -86,8 +86,9 @@ both stay empty, exactly as before.
 
 ## Not built here
 
-No task sandbox (Y-029 — acquires here are the lease shape
-it will hold); the resource governor has landed (Y-028 — it
+The task sandbox has landed (Y-029 — `execute_task` holds
+an acquire here for exactly the run's duration, and releases
+it whatever the outcome); the resource governor has landed (Y-028 — it
 only ever *recommends* resident shedding at its hard thermal
 line; unloading remains this manager's act, under its own
 in-use protections), no routing (Part IV reads the

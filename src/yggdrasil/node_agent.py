@@ -71,6 +71,17 @@ every later Part II slice hangs its machinery on:
   both bite), and ``status()`` carries its last evaluated
   state. Without one wired, health keeps only drain's flag,
   exactly as before.
+- **task sandbox (Y-029, grown onto the skeleton):** a
+  ``sandbox=`` handed in at construction runs tasks bounded
+  (time, tokens, output), cancellable, with streamed partial
+  results. ``execute_task`` takes the lease first (the
+  governor's admission rides along), holds a model-lifecycle
+  use lease on the task's model for the run when one is wired
+  (Y-027 — a running task's model cannot be unloaded), runs
+  the sandbox, and releases both leases whatever the outcome.
+  ``status()`` carries the sandbox's policy and its finished
+  execution count. Without one wired, the agent still only
+  leases, exactly as before.
 - **observability:** every lifecycle move is recorded as a
   Y-013 EventEnvelope from the ``node_agent`` component (the
   first real emitter in the tree), and written to the config's
@@ -114,6 +125,7 @@ from yggdrasil.identity import (
 )
 from yggdrasil.model_lifecycle import ModelLifecycleError
 from yggdrasil.observability import LocalJsonlSink, make_event
+from yggdrasil.sandbox import SandboxError
 
 _ROOT = Path(__file__).resolve().parents[2]
 _SCHEMAS = _ROOT / "contracts" / "schemas"
@@ -253,6 +265,7 @@ class NodeAgent:
         model_store=None,
         model_lifecycle=None,
         governor=None,
+        sandbox=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -282,6 +295,11 @@ class NodeAgent:
         # memory, and CPU share. When wired, begin_task asks
         # its permission first, and health() reports its verdict.
         self._governor = governor
+        # The task sandbox (Y-029): bounded, cancellable task
+        # execution with streamed partial results. When wired,
+        # execute_task runs behind the lease this skeleton has
+        # held since Y-021.
+        self._sandbox = sandbox
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
         self._identity: dict | None = None
@@ -338,6 +356,62 @@ class NodeAgent:
         """The node's resource governor (Y-028), or None when
         the agent was built without one."""
         return self._governor
+
+    @property
+    def sandbox(self):
+        """The node's task execution sandbox (Y-029), or None
+        when the agent was built without one."""
+        return self._sandbox
+
+    # -- task execution (Y-029) -----------------------------------------
+
+    def execute_task(
+        self,
+        task: dict,
+        runner,
+        *,
+        engine: str,
+        model: str,
+        memory_bytes: int = 0,
+        cpu_share: float = 0.0,
+        on_event=None,
+    ):
+        """Run one task in the sandbox (Y-029), behind this
+        agent's lease: ``begin_task`` first (a joined node, the
+        governor's admission when one is wired), a
+        model-lifecycle use lease on ``model`` for the run's
+        duration when a lifecycle is wired — a model with a
+        task running against it cannot be unloaded or evicted
+        (Y-027) — then the sandbox itself, bounded and
+        cancellable, streamed through ``on_event``. Both leases
+        release whatever the outcome. Returns the sandbox's
+        (ResultEnvelope, StreamEvents, SandboxReport)."""
+        if self._sandbox is None:
+            raise NodeAgentError("this agent has no task sandbox wired")
+        if not isinstance(task, dict) or not isinstance(task.get("id"), str):
+            raise NodeAgentError("execute_task needs a task envelope with an id")
+        task_id = task["id"]
+        self.begin_task(task_id, memory_bytes=memory_bytes, cpu_share=cpu_share)
+        acquired = False
+        try:
+            if self._model_lifecycle is not None:
+                try:
+                    self._model_lifecycle.acquire(model)
+                    acquired = True
+                except ModelLifecycleError as exc:
+                    raise NodeAgentError(str(exc)) from exc
+            try:
+                return self._sandbox.run(
+                    task, runner, engine=engine, model=model, on_event=on_event
+                )
+            except SandboxError as exc:
+                raise NodeAgentError(str(exc)) from exc
+        finally:
+            try:
+                if acquired:
+                    self._model_lifecycle.release(model)
+            finally:
+                self.end_task(task_id)
 
     # -- model lifecycle (Y-027) ------------------------------------------
 
@@ -621,6 +695,15 @@ class NodeAgent:
                 else []
             ),
             "governor": self._governor.last_state if self._governor is not None else None,
+            "sandbox": (
+                {
+                    "policy": self._sandbox.policy,
+                    "active": list(self._sandbox.active_task_ids),
+                    "executions": len(self._sandbox.reports),
+                }
+                if self._sandbox is not None
+                else None
+            ),
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,
             "census": (

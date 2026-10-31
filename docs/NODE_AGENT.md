@@ -140,8 +140,10 @@ models into budgeted slots and reports them in `health()`),
 and the resource governor has landed (Y-028 — an agent built
 with `governor=` refuses new task leases over its heat,
 memory, or CPU ceilings and reports the verdict in
-`health()`/`status()`); no
-task execution (Y-029), no heartbeat endpoint (Y-030), no queue
+`health()`/`status()`); and task execution has landed (Y-029 —
+an agent built with `sandbox=` runs tasks through
+`execute_task`, behind the lease and holding the model's use
+lease for the run; see SANDBOX.md); no heartbeat endpoint (Y-030), no queue
 (Y-031), no fabric join (Part III), and no real hardware citizen
 (Y-033 – Y-035). The skeleton has run in tests on this VM only;
 nothing here is a hardware claim.
