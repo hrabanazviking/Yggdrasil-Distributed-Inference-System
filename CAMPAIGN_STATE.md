@@ -15,7 +15,7 @@
 
 ## Position
 
-- Banked: 1 / 244. In progress: Part I (Y-001 done).
+- Banked: 9 / 244. In progress: Part I (next: Y-010 threat model).
 
 ## Slice log
 
@@ -23,3 +23,11 @@
 |---|---|---|
 | — | campaign opened | roadmap pushed @ `d9d7a2ce` (ls-remote verified == local) |
 | Y-001 | BANKED | `docs/SPEC_CONCORDANCE.md`: every spec + WorldNet section mapped to a roadmap part or named deferred with reason |
+| Y-002 | BANKED | ADR-001 language: Python first; compiled-path criteria (measured thresholds) recorded |
+| Y-003 | BANKED | ADR-002 transport: six benchmark criteria fixed; choice runs at Y-049 |
+| Y-004 | BANKED | ADR-003 state: CRDT vs single-writer log per store, merge rules |
+| Y-005 | BANKED | ADR-004 engines: Aesir/Ollama/llama.cpp/OpenAI-compatible wrapped; per-engine honesty rules |
+| Y-006 | BANKED | Node contract v1: 5 schemas + narrative; validated by Y-009 harness |
+| Y-007 | BANKED | Task contract v1: envelopes + stream shape + 16-name error taxonomy; validated |
+| Y-008 | BANKED | Registry contract v1: spec §4.2 model entry schema with graded measured speeds |
+| Y-009 | BANKED | Scaffolding: package + pyproject + systemd unit as data + manual-dispatch CI; pytest 9 passed, ruff clean (venv) |
