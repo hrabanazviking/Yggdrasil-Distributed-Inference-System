@@ -216,6 +216,7 @@ def test_thermal_at_the_hard_line_is_critical():
 
 
 def make_store(tmp_path: Path, body: bytes = b"SIMULATED weights v1") -> ModelStore:
+    tmp_path.mkdir(parents=True, exist_ok=True)
     source = tmp_path / "source.gguf"
     source.write_bytes(body)
     store = ModelStore(tmp_path / "store", now=lambda: FIXED)
