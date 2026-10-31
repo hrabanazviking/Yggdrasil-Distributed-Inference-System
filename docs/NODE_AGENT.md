@@ -75,12 +75,25 @@ created ──start──▶ started ──join──▶ joined ──drain─�
   (`begin_task`/`end_task`): the lifecycle gate that execution
   (Y-029) and the queue (Y-031) will sit behind. A draining node
   takes no new leases; duplicate and unknown leases are refused.
-- **drain** — from `started` or `joined`; the node sheds: no new
+- **drain** — from `started`, `joined`, or `paused`; the node sheds: no new
   leases, health names the governor shedding.
-- **stop** — from `started`, `joined`, or `draining`; refused
+- **pause / resume** (Y-042) — `joined → paused → joined`: the
+  operator's brake that is not a goodbye. A paused node stays
+  present — identity, models, queue, and in-flight leases all
+  kept, and held leases may finish — but takes nothing new;
+  health names the pause (`reason: "paused"`) the way it names
+  a drain. The operator's ledger for these verbs is
+  OPERATOR_TOOLS.md.
+- **stop** — from `started`, `joined`, `paused`, or `draining`; refused
   while leases are in flight, so a node finishes or hands off
   its work before it leaves — it never vanishes mid-task by
   accident.
+- **retire** (Y-042) — from any live state (or `stopped`) once
+  no lease is in flight, to the terminal state `retired`: a
+  retired agent cannot be restarted by `start()` — a node that
+  is wanted again is re-provisioned as a new agent, so the old
+  one's book is never silently rewritten. `status()` records
+  `retired_at`.
 
 Illegal moves raise `NodeAgentError` naming the current state
 and the states the verb is allowed from.
@@ -88,9 +101,9 @@ and the states the verb is allowed from.
 ## Health and status
 
 `health()` answers the Y-006 `HealthReport` shape from lifecycle
-truth: `present` while started/joined/draining, `gone`
+truth: `present` while started/joined/paused/draining, `gone`
 otherwise; `governor: {shedding: true, reason: "draining"}`
-while draining. When a resource governor is wired (Y-028),
+while draining, `reason: "paused"` while paused (Y-042). When a resource governor is wired (Y-028),
 the same field carries its verdict instead — its reasons, or
 `within_ceilings`, with `draining` combined in front when
 both bite — and `status()` carries its last evaluated state. It deliberately claims nothing early —
@@ -179,6 +192,53 @@ census; see VM_CITIZEN.md); and the phone citizen has
 landed (Y-036 — the same factory shape for a phone: a
 small-model ceiling and a battery governor policy, both
 as data, built and SIMULATED only — on-device proof NOT
-PROVEN until a phone runs it; see PHONE_CITIZEN.md); no fabric
+PROVEN until a phone runs it; see PHONE_CITIZEN.md); and
+model fetch duty has landed (Y-037 — an agent built with
+`model_fetcher=` fetches a model it lacks from a peer or a
+named source when policy allows, hash-verified, into its
+store, and carries the fetch report in `status()`; see
+MODEL_FETCH.md); and quantisation fitness has landed
+(Y-038 — an agent built with `quant_fitness=` answers
+pre-flight verdicts for any registry entry against its
+measured census via `quant_verdicts`, the citizen factories
+wire the same judge into their lifecycle so an unfit quant
+is refused at load, and `status()` carries the judge's
+summary; see QUANT_FITNESS.md); and the node journal has
+landed (Y-039 — an agent built with `node_journal=`
+journals every finished `execute_task` run from its own
+records, reads the book back via `journal_entries()` /
+`journal_report()`, and carries the report in `status()`
+under `journal`; see NODE_JOURNAL.md); and graceful
+degradation has landed (Y-040 — an agent built with
+`degradation_tracker=` judges every census refresh
+against its baseline: a lost accelerator is declared
+in the refresh result and in `status()` under
+`degradation`, CPU-fallback residents are re-placed
+into the system pool, stranded residents not in use
+are unloaded, in-use residents are deferred and named;
+see DEGRADATION.md); and idle generosity has landed
+(Y-041 — an agent built with `idle_generosity=` evaluates
+its spare capacity fresh from its own present facts via
+`generosity_advertisement()`: idle advertises, busy
+withdraws with reasons named, and `status()` carries the
+last advertisement under `generosity`; see
+IDLE_GENEROSITY.md); and task security has landed
+(Y-043 — an agent built with `task_guard=` judges every
+task at the door before any lease or queue slot is spent:
+tasks are data, never code, unless a signed task kind
+explicitly says so, and `status()` carries the guard's
+report under `task_security`; see TASK_SECURITY.md); and
+power/thermal telemetry has landed (Y-044 — an agent built
+with `power_telemetry=` samples measured zones, supplies,
+and watts via `sample_power_telemetry()`, carries the
+history report in `status()` under `power_telemetry`, and
+cites the governor's last verdict against the reading it
+rests on via `governor_citation()`; the Pi and laptop
+factories wire it; see POWER_TELEMETRY.md); and the
+multi-engine host has landed (Y-045 — an agent built with
+`multi_engine=` assigns resident models to exactly one of
+its hosted engines, accounts slots across all of them, and
+carries the host's report in `status()` under
+`multi_engine`; see MULTI_ENGINE.md); no fabric
 join (Part III). The skeleton has run in tests on this VM only;
 nothing here is a hardware claim.

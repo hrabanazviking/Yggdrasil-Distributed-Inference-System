@@ -61,12 +61,15 @@ same views; the door's commands do not change.
   output carries the SIMULATED banner and JSON carries
   `"simulated": true`; no real node has been listed by this
   door, and nothing here is evidence about any device.
-- **The door is read-only in v0.** It cannot submit, cancel,
-  drain, or retire — verified by test: opening every view
-  leaves the source's nodes, results, and events untouched.
-  Task submission from the CLI grows at Y-093 and node
-  operator tools (drain, pause, inspect, retire) at Y-042,
-  each with the machinery it acts on.
+- **The views are read-only.** Opening every view leaves the
+  source's nodes, results, and events untouched, verified by
+  test. The operator's verbs have since landed at Y-042 as
+  the separate `node` subcommands (`node drain|pause|resume|
+  inspect|retire`) driving an `OperatorTools` over a live
+  agent handed in by the deployment wiring — see
+  OPERATOR_TOOLS.md. There is no demo agent behind those
+  verbs: with none handed in, they refuse by name. Task
+  submission from the CLI grows at Y-093.
 - **No network path exists in this module.** The door reads
   its source in-process; a door over a real, distributed mesh
   arrives with the fabric (Part III), not before.

@@ -1,0 +1,100 @@
+{
+ "$id": "yggdrasil/contracts/v1/transport_candidate",
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "additionalProperties": false,
+ "properties": {
+  "failure_modes": {
+   "items": {
+    "minLength": 1,
+    "type": "string"
+   },
+   "minItems": 1,
+   "type": "array"
+  },
+  "header_bytes": {
+   "minimum": 0,
+   "type": "integer"
+  },
+  "hop_latency_ms": {
+   "exclusiveMinimum": 0,
+   "type": "number"
+  },
+  "hops_per_delivery": {
+   "maximum": 4,
+   "minimum": 1,
+   "type": "integer"
+  },
+  "id": {
+   "pattern": "^[a-z][a-z0-9-]{1,40}$",
+   "type": "string"
+  },
+  "identity": {
+   "minLength": 1,
+   "type": "string"
+  },
+  "install_size_mb_declared": {
+   "minimum": 0,
+   "type": "number"
+  },
+  "operability_notes": {
+   "minLength": 1,
+   "type": "string"
+  },
+  "persistence": {
+   "enum": [
+    "persistent-session",
+    "durable-stream",
+    "store-and-forward",
+    "none"
+   ]
+  },
+  "resident_memory_mb_pi_declared": {
+   "minimum": 0,
+   "type": "number"
+  },
+  "sync_bytes": {
+   "minimum": 1,
+   "type": "integer"
+  },
+  "sync_fanout": {
+   "minimum": 1,
+   "type": "integer"
+  },
+  "sync_interval_s": {
+   "exclusiveMinimum": 0,
+   "type": "number"
+  },
+  "tls_first_class": {
+   "type": "boolean"
+  },
+  "topology": {
+   "enum": [
+    "broker",
+    "peer-mesh"
+   ]
+  },
+  "version": {
+   "const": 1
+  }
+ },
+ "required": [
+  "version",
+  "id",
+  "topology",
+  "persistence",
+  "hops_per_delivery",
+  "hop_latency_ms",
+  "header_bytes",
+  "sync_interval_s",
+  "sync_bytes",
+  "sync_fanout",
+  "install_size_mb_declared",
+  "resident_memory_mb_pi_declared",
+  "tls_first_class",
+  "identity",
+  "failure_modes",
+  "operability_notes"
+ ],
+ "title": "TransportCandidate v1 \u2014 one fabric transport in the Y-049 benchmark, as data: its topology, its persistence under partition, the latency/chatter model parameters the simulated benchmark runs on, and its weight declared \u2014 never measured (Y-049)",
+ "type": "object"
+}

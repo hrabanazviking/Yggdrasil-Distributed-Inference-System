@@ -95,5 +95,13 @@ this verdict rides every heartbeat in full, as
 `governor_state`; see HEALTH_ENDPOINT.md), and no hardware claim:
 the suite's readings are injected fixtures, and the one real
 reading taken — this VM's, by `system_readings()` in tests —
-reports its thermal honestly unknown. Acting on real heat on
-named hardware is Y-044.
+reports its thermal honestly unknown. Power and thermal
+telemetry has now landed (Y-044 — measured zones, supplies,
+and watts as validated readings, and every verdict citable
+against the reading it rests on via `governor_citation`;
+in the Pi and laptop factories the governor's thermal
+reading *is* the telemetry's sampled hottest zone when no
+readings provider is handed in; see POWER_TELEMETRY.md).
+Acting on real heat over time on named hardware belongs to
+the Part VIII drills (Y-174/Y-176); no live power/thermal
+run on Mimir or purplelongship is claimed by Y-044.

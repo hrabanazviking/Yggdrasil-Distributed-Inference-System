@@ -80,14 +80,21 @@ from jsonschema import validators
 from referencing import Registry, Resource
 
 from yggdrasil.census import CensusCollector, validate_census
+from yggdrasil.degradation import DegradationTracker
 from yggdrasil.failure_shapes import FailureMonitor
-from yggdrasil.governor import ResourceGovernor
+from yggdrasil.governor import ResourceGovernor, system_readings
 from yggdrasil.governor import validate_policy as validate_governor_policy
+from yggdrasil.idle_generosity import IdleGenerosity
 from yggdrasil.local_queue import LocalQueue
+from yggdrasil.model_fetch import ModelFetcher
 from yggdrasil.model_lifecycle import ModelLifecycle, budgets_from_census
 from yggdrasil.model_store import ModelStore
 from yggdrasil.node_agent import NodeAgent
+from yggdrasil.node_journal import NodeJournal
+from yggdrasil.power_telemetry import PowerTelemetry
+from yggdrasil.quant_fitness import QuantFitness
 from yggdrasil.sandbox import TaskSandbox
+from yggdrasil.task_security import TaskGuard
 
 _ROOT = Path(__file__).resolve().parents[2]
 _SCHEMAS = _ROOT / "contracts" / "schemas"
@@ -364,6 +371,11 @@ def build_pi_citizen_agent(
     simulated: bool = False,
     now=None,
     key_store=None,
+    fetch_transport=None,
+    fetch_policy=None,
+    journal_path=None,
+    task_security_policy=None,
+    power_snapshot=None,
 ) -> tuple[NodeAgent, dict]:
     """The full Pi citizen: evaluate first, and refuse a machine
     that does not meet the profile; then wire the whole Part II
@@ -400,15 +412,38 @@ def build_pi_citizen_agent(
             f"this machine does not meet the Pi citizen profile (failed: "
             f"{', '.join(failed)}); it is not dressed as a Pi citizen"
         )
+    telemetry = PowerTelemetry(
+        config.node_id, snapshot=power_snapshot, simulated=simulated, now=now
+    )
+    governor_readings = readings
+    if governor_readings is None:
+        # Y-044: with no readings provider handed in, the
+        # governor's thermal reading IS the telemetry's
+        # hottest zone, sampled at evaluation time — the
+        # verdict and its citation rest on one measurement.
+        # Memory and CPU still come from the governor's own
+        # system readings (Y-028).
+        def governor_readings():
+            base = system_readings()
+            sample = telemetry.sample()
+            if sample["hottest_c"] is not None:
+                base["thermal_c"] = sample["hottest_c"]
+            return base
+
     governor = ResourceGovernor(
-        config.node_id, dict(profile["governor_policy"]), readings=readings, now=now
+        config.node_id, dict(profile["governor_policy"]), readings=governor_readings, now=now
     )
     store = ModelStore(store_root, now=now)
     budgets = budgets_from_census(census, max_slots=profile["max_slots"])
     budgets["ram_bytes"] = int(
         census["ram_gb"] * profile["governor_policy"]["max_memory_fraction"] * (1024**3)
     )
-    lifecycle = ModelLifecycle(config.node_id, store, now=now, **budgets)
+    fitness = QuantFitness(
+        config.node_id, device_class=config.device_class, census=census
+    )
+    lifecycle = ModelLifecycle(
+        config.node_id, store, now=now, fitness_checker=fitness, **budgets
+    )
     sandbox = TaskSandbox(config.node_id, now=now)
     queue = LocalQueue(config.node_id, now=now)
     monitor = FailureMonitor(
@@ -418,6 +453,19 @@ def build_pi_citizen_agent(
         model_lifecycle=lifecycle,
         now=now,
     )
+    fetcher = ModelFetcher(
+        config.node_id,
+        store,
+        policy=fetch_policy,
+        transport=fetch_transport,
+        now=now,
+        simulated=simulated,
+    )
+    tracker = DegradationTracker(config.node_id, now=now)
+    generosity = IdleGenerosity(config.node_id, now=now)
+    guard = TaskGuard(config.node_id, task_security_policy, now=now)
+    tracker.observe_census(census)
+    journal = NodeJournal(config.node_id, path=journal_path, now=now)
     agent = NodeAgent(
         config,
         key_store=key_store,
@@ -429,6 +477,13 @@ def build_pi_citizen_agent(
         sandbox=sandbox,
         local_queue=queue,
         failure_monitor=monitor,
+        model_fetcher=fetcher,
+        quant_fitness=fitness,
+        node_journal=journal,
+        degradation_tracker=tracker,
+        idle_generosity=generosity,
+        task_guard=guard,
+        power_telemetry=telemetry,
         citizen=report,
     )
     return agent, report

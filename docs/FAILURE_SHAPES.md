@@ -99,5 +99,7 @@ no memory at OS level, and restarts nothing — process
 supervision is the deployment's (systemd) and later
 slices'. No hardware claim: the suite's stores, readings,
 and governors are fixtures on this VM; detection on named
-hardware belongs to the citizens (Y-033 – Y-035) and
-real-heat telemetry to Y-044.
+hardware belongs to the citizens (Y-033 – Y-035), and
+power/thermal telemetry has landed at Y-044 (measured
+readings and governor citations; live runs on named
+hardware belong to Part VIII — see POWER_TELEMETRY.md).

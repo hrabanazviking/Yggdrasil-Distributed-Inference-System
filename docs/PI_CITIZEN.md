@@ -149,6 +149,33 @@ The citizen's own 12 tests pass on ARM (6.05 s) as on the VM.
 
 ## Not built / not claimed here
 
+- Model fetch duty (Y-037) is wired by this factory: the
+  agent carries a `model_fetcher=` over its store (policy
+  and transport are the factory's `fetch_policy=` /
+  `fetch_transport=` seams; with no transport handed in, a
+  fetch fails honestly as `no_transport_wired` — no real
+  peer has carried a model for this tree yet; see
+  MODEL_FETCH.md).
+
+- Quantisation fitness (Y-038) is wired by this factory: the
+  agent carries a `quant_fitness=` judge built over the
+  factory's measured census, and the same judge gates its
+  lifecycle — an unfit quant is refused at load, by name,
+  before the loader is asked (see QUANT_FITNESS.md).
+
+- The node journal (Y-039) is wired by this factory: the
+  agent carries a `node_journal=` over its runs — in-memory
+  by default, or the durable JSONL file when the factory is
+  handed `journal_path=` — and `status()` carries its
+  report under `journal` (see NODE_JOURNAL.md).
+- Graceful degradation (Y-040) is wired by this factory:
+  the agent carries a `degradation_tracker=` whose
+  baseline is this factory's measured census — the Pi
+  citizen opens `cpu_only_by_design` (Mimir measured no
+  accelerator; that is its design, not a loss), and any
+  accelerator a future Pi census gains and then loses
+  would be declared by name (see DEGRADATION.md).
+
 - No systemd service is installed on Mimir by this slice:
   enabling `deploy/yggdrasil-node.service` there stays the
   operator's act, with identity provisioning (Y-011) done by
@@ -158,5 +185,10 @@ The citizen's own 12 tests pass on ARM (6.05 s) as on the VM.
   Aesir's ledger as always.
 - No fabric presence: joining is still the local act of
   Y-021 until Part III.
-- Power/thermal telemetry acting on real heat is Y-044;
-  this slice's governor reads the seams it is handed.
+- Power/thermal telemetry has landed (Y-044): this factory
+  wires a `PowerTelemetry` into the agent, and with no
+  readings provider handed in the governor's thermal reading
+  is the telemetry's sampled hottest zone (see
+  POWER_TELEMETRY.md). A live power/thermal run on Mimir
+  under that module is not claimed there; it belongs to the
+  Part VIII road.

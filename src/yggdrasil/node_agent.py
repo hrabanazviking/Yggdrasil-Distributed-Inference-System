@@ -24,7 +24,14 @@ every later Part II slice hangs its machinery on:
   yet; later slices add their knobs to this schema, versioned.
 - **lifecycle:** ``created → started → joined → draining →
   stopped``, with restart from ``stopped`` allowed (identity is
-  re-verified on every start). Illegal moves are refused by name.
+  re-verified on every start). Y-042's operator verbs grow two
+  more states onto the same ledger: ``paused`` (joined →
+  paused → joined: present, holding its identity, models, and
+  queue, finishing in-flight leases, taking nothing new) and
+  ``retired`` (terminal: from any live state once no lease is
+  in flight; a retired agent is never restarted — it is
+  re-provisioned as a new agent if wanted again). Illegal
+  moves are refused by name.
   A joined node may hold task *leases* (``begin_task`` /
   ``end_task``) — the lifecycle gate only: a draining node takes
   no new leases, and ``stop()`` refuses while leases are in
@@ -129,6 +136,79 @@ every later Part II slice hangs its machinery on:
   ``status()`` under ``citizen`` so the operator's door can
   read which citizen this node is and on what measured facts.
   Without one, ``status()`` carries ``citizen: None``.
+- **model fetch duty (Y-037, grown onto the skeleton):** a
+  ``model_fetcher=`` handed in at construction stocks the
+  node's store from a mesh peer or a named source, when
+  policy allows, hash-verified against the pin the request
+  itself carries (``yggdrasil.model_fetch``). ``fetch_model``
+  delegates to it (a started or joined node fetches; a
+  draining node stocks nothing new), outcomes come back as
+  validated fetch records — fetched, already present,
+  refused, failed, each named — and ``status()`` carries the
+  fetcher's report. Without one wired, the agent fetches
+  nothing, as before.
+- **quantisation fitness (Y-038, grown onto the skeleton):**
+  a ``quant_fitness=`` handed in at construction is the node's
+  placement-time judge (``yggdrasil.quant_fitness``): the
+  citizen factories wire the same judge into the model
+  lifecycle, so an unfit quant is refused at load, and the
+  agent's own ``quant_verdicts`` answers the pre-flight
+  question for any registry entry against this node's
+  measured census. ``status()`` carries the judge's summary.
+  Without one wired, the agent judges nothing, as before.
+- **node journal (Y-039, grown onto the skeleton):** a
+  ``node_journal=`` handed in at construction is the node's
+  book of tasks it ran (``yggdrasil.node_journal``).
+  ``execute_task`` journals every finished sandbox run —
+  completed, failed, cancelled, expired alike — after the
+  failure monitor has sorted it, from the run's own task,
+  result, and sandbox report; a run refused before it starts
+  (the governor, a non-resident model) never reaches the
+  sandbox and is not journaled. ``journal_entries()`` /
+  ``journal_report()`` read the book back and ``status()``
+  carries the report. Without one wired, the agent keeps no
+  book, exactly as before.
+- **graceful degradation (Y-040, grown onto the skeleton):**
+  a ``degradation_tracker=`` handed in at construction is
+  the node's degradation ledger (``yggdrasil.degradation``):
+  every ``refresh_census()`` feeds the fresh census to it,
+  with the lifecycle's resident records and the store's
+  entries, so a lost accelerator is declared — baseline vs
+  present, lost kinds named, CPU-only service stated — in
+  the refresh result and in ``status()``. When the fresh
+  state is degraded and a lifecycle is wired, the agent
+  acts on the assessment: CPU-fallback residents are
+  re-placed into the system pool, stranded residents that
+  are not in use are unloaded, and in-use residents are
+  left running and named — the acts ride in the refresh
+  result's ``degradation_acts``, failures named, never
+  hidden. ``degradation_state()`` / ``degradation_report()``
+  read the ledger back. Without one wired, the agent
+  refreshes its census exactly as before and declares no
+  degradation it never judged.
+- **idle generosity (Y-041, grown onto the skeleton):** an
+  ``idle_generosity=`` handed in at construction is the node's
+  generosity ledger (``yggdrasil.idle_generosity``).
+  ``generosity_advertisement()`` evaluates it fresh from the
+  agent's own present facts — lifecycle state, in-flight
+  leases, the local queue's report, the governor's verdict
+  and readings, the lifecycle's free slots, the latest
+  census's measured accelerator kinds, and the models
+  loaded — so an idle node advertises spare capacity and a
+  busy one withdraws it, reasons named, in the same call.
+  ``generosity_report()`` reads the ledger back and
+  ``status()`` carries the last advertisement. Without one
+  wired, the agent advertises nothing, exactly as before.
+- **multi-engine host (Y-045, grown onto the skeleton):** a
+  ``multi_engine=`` handed in at construction is the node's
+  host of several engines side by side over the shared model
+  lifecycle (``yggdrasil.multi_engine``): resident models are
+  assigned to exactly one engine, slots are accounted across
+  engines, and tasks route by their model's own facts.
+  ``assign_model_to_engine`` / ``unassign_model`` delegate to
+  it, and ``status()`` carries its validated report. Without
+  one wired, the agent accounts nothing across engines,
+  exactly as before.
 - **observability:** every lifecycle move is recorded as a
   Y-013 EventEnvelope from the ``node_agent`` component (the
   first real emitter in the tree), and written to the config's
@@ -160,6 +240,7 @@ from referencing import Registry, Resource
 
 from yggdrasil import __version__
 from yggdrasil.census import CensusCollector, census_fingerprint
+from yggdrasil.degradation import DegradationError
 from yggdrasil.failure_shapes import FailureError
 from yggdrasil.governor import GovernorError
 from yggdrasil.health_endpoint import HealthError, NodeHealthEndpoint
@@ -172,10 +253,17 @@ from yggdrasil.identity import (
     fingerprint,
     verify_certificate,
 )
+from yggdrasil.idle_generosity import GenerosityError
 from yggdrasil.local_queue import QueueError
+from yggdrasil.model_fetch import ModelFetchError
 from yggdrasil.model_lifecycle import ModelLifecycleError
+from yggdrasil.multi_engine import MultiEngineError
+from yggdrasil.node_journal import JournalError
 from yggdrasil.observability import LocalJsonlSink, make_event
+from yggdrasil.power_telemetry import PowerTelemetryError
+from yggdrasil.quant_fitness import QuantFitnessError
 from yggdrasil.sandbox import SandboxError
+from yggdrasil.task_security import TaskSecurityError
 
 _ROOT = Path(__file__).resolve().parents[2]
 _SCHEMAS = _ROOT / "contracts" / "schemas"
@@ -185,10 +273,12 @@ TRANSPORT = "local-only"  # the fabric that would carry a join is Part III
 CREATED = "created"
 STARTED = "started"
 JOINED = "joined"
+PAUSED = "paused"
 DRAINING = "draining"
 STOPPED = "stopped"
-LIFECYCLE_STATES = (CREATED, STARTED, JOINED, DRAINING, STOPPED)
-_PRESENT_STATES = (STARTED, JOINED, DRAINING)
+RETIRED = "retired"
+LIFECYCLE_STATES = (CREATED, STARTED, JOINED, PAUSED, DRAINING, STOPPED, RETIRED)
+_PRESENT_STATES = (STARTED, JOINED, PAUSED, DRAINING)
 
 
 def _load_schema(name: str) -> dict:
@@ -319,6 +409,14 @@ class NodeAgent:
         local_queue=None,
         failure_monitor=None,
         citizen=None,
+        model_fetcher=None,
+        quant_fitness=None,
+        node_journal=None,
+        degradation_tracker=None,
+        idle_generosity=None,
+        task_guard=None,
+        power_telemetry=None,
+        multi_engine=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -366,6 +464,52 @@ class NodeAgent:
         # evaluation this agent was built under, carried into
         # status() verbatim. The agent evaluates nothing itself.
         self._citizen = citizen
+        # The model fetcher (Y-037): policy-gated, hash-verified
+        # fetching into the node's store from a peer or a named
+        # source. When wired, fetch_model delegates to it and
+        # status() carries its report.
+        self._model_fetcher = model_fetcher
+        # The quant-fitness judge (Y-038): placement-time
+        # verdicts over this node's measured census. The same
+        # judge is wired into the lifecycle by the citizen
+        # factories, so load-time enforcement and this agent's
+        # pre-flight answers cannot disagree.
+        self._quant_fitness = quant_fitness
+        # The node journal (Y-039): the book of tasks this node
+        # ran — engine, model, timings, outcome per run. When
+        # wired, execute_task journals every finished run and
+        # status() carries its report.
+        self._node_journal = node_journal
+        # The degradation tracker (Y-040): the node's ledger
+        # of accelerator loss — baseline vs present, lost kinds
+        # named, reduced capability declared. When wired, every
+        # census refresh is judged by it and status() carries
+        # its state.
+        self._degradation_tracker = degradation_tracker
+        # The idle-generosity ledger (Y-041): present-tense
+        # spare-capacity advertisements, evaluated fresh from
+        # the agent's own load facts on every asking. When
+        # wired, status() carries the last advertisement.
+        self._idle_generosity = idle_generosity
+        # The task guard (Y-043): tasks are data, never code,
+        # unless a signed task kind explicitly says so. When
+        # wired, execute_task and queue_task consult it before
+        # any lease or queue slot is spent, and status()
+        # carries its report.
+        self._task_guard = task_guard
+        # The power/thermal telemetry (Y-044): the node's
+        # senses for heat and power. When wired, samples are
+        # taken on asking, status() carries its report, and
+        # governor_citation() pairs the governor's verdicts
+        # with the reading they rest on.
+        self._power_telemetry = power_telemetry
+        # The multi-engine host (Y-045): this node's engines
+        # hosted side by side over the shared lifecycle, slots
+        # accounted across engines. When wired, assignments and
+        # routing delegate to it and status() carries its
+        # report. The host's lifecycle is the deployment's to
+        # keep the same object as model_lifecycle=.
+        self._multi_engine = multi_engine
         self._health_endpoint: NodeHealthEndpoint | None = None
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
@@ -376,6 +520,7 @@ class NodeAgent:
         self._seq = 0
         self._started_at: datetime | None = None
         self._joined_at: datetime | None = None
+        self._retired_at: datetime | None = None
         self._sink = LocalJsonlSink(config.log_file) if config.log_file else None
 
     # -- facts --------------------------------------------------------
@@ -448,6 +593,30 @@ class NodeAgent:
         (Y-033), or None when no citizen factory built it."""
         return self._citizen
 
+    @property
+    def model_fetcher(self):
+        """The node's model fetcher (Y-037), or None when the
+        agent was built without one."""
+        return self._model_fetcher
+
+    @property
+    def quant_fitness(self):
+        """The node's quant-fitness judge (Y-038), or None when
+        the agent was built without one."""
+        return self._quant_fitness
+
+    @property
+    def node_journal(self):
+        """The node's journal (Y-039), or None when the agent
+        was built without one."""
+        return self._node_journal
+
+    @property
+    def degradation_tracker(self):
+        """The node's degradation tracker (Y-040), or None
+        when the agent was built without one."""
+        return self._degradation_tracker
+
     # -- failure shapes (Y-032) -------------------------------------------
 
     def check_failures(self, readings: dict | None = None) -> dict:
@@ -468,6 +637,115 @@ class NodeAgent:
         monitor is wired — polling nothing, claiming nothing."""
         return self._failure_monitor.report() if self._failure_monitor is not None else None
 
+    # -- task security (Y-043) ----------------------------------------------
+
+    @property
+    def task_guard(self):
+        """The wired task guard (Y-043), or None when the agent
+        was built without one."""
+        return self._task_guard
+
+    def _guard_task(self, task: dict, signature: dict | None) -> None:
+        """The task guard's door (Y-043): when a guard is wired,
+        the task is judged before any lease or queue slot is
+        spent — data allowed, signed code allowed under a
+        declared code kind, everything else refused by name
+        with its Y-007 error code. A refusal here means the
+        task never ran and is never journaled (Y-039's rule)."""
+        if self._task_guard is None:
+            return
+        try:
+            self._task_guard.require_allowed(task, signature)
+        except TaskSecurityError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def task_security_report(self) -> dict | None:
+        """The task guard's report (Y-043), or None when no
+        guard is wired — judging nothing, claiming nothing."""
+        return self._task_guard.report() if self._task_guard is not None else None
+
+    # -- power and thermal telemetry (Y-044) ---------------------------------
+
+    @property
+    def power_telemetry(self):
+        """The wired power/thermal telemetry (Y-044), or None
+        when the agent was built without it."""
+        return self._power_telemetry
+
+    def sample_power_telemetry(self) -> dict | None:
+        """Take one power/thermal sample (Y-044), or None when
+        no telemetry is wired — sensing nothing, claiming
+        nothing."""
+        if self._power_telemetry is None:
+            return None
+        try:
+            return self._power_telemetry.sample()
+        except PowerTelemetryError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def power_telemetry_report(self) -> dict | None:
+        """The telemetry history report (Y-044), or None when
+        no telemetry is wired. Asking never samples."""
+        return self._power_telemetry.report() if self._power_telemetry is not None else None
+
+    def governor_citation(self) -> dict | None:
+        """The governor's last verdict cited against the newest
+        telemetry sample (Y-044): the state it rests on, with
+        the reading's age and staleness named. None when either
+        the governor or the telemetry is unwired, or when the
+        governor has not evaluated yet — no verdict is forced
+        by asking."""
+        if self._power_telemetry is None or self._governor is None:
+            return None
+        state = self._governor.last_state
+        if state is None:
+            return None
+        try:
+            return self._power_telemetry.cite(state)
+        except PowerTelemetryError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    # -- multi-engine host (Y-045) -------------------------------------------
+
+    @property
+    def multi_engine(self):
+        """The wired multi-engine host (Y-045), or None when
+        the agent was built without one."""
+        return self._multi_engine
+
+    def assign_model_to_engine(
+        self, model: str, engine: str, *, placement: str = "auto", pinned: bool = False
+    ) -> dict:
+        """Assign one resident model to one hosted engine
+        (Y-045): the host checks the engine's own model list,
+        the shared lifecycle spends the slot. A started or
+        joined node assigns, as it loads (Y-027)."""
+        if self._multi_engine is None:
+            raise NodeAgentError("this agent has no multi-engine host wired")
+        self._require("assign_model_to_engine", STARTED, JOINED)
+        try:
+            return self._multi_engine.assign(
+                model, engine, placement=placement, pinned=pinned
+            )
+        except MultiEngineError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def unassign_model(self, model: str) -> dict:
+        """Unassign one model from its engine (Y-045), unloading
+        it — also allowed while draining, as unloads are."""
+        if self._multi_engine is None:
+            raise NodeAgentError("this agent has no multi-engine host wired")
+        self._require("unassign_model", STARTED, JOINED, DRAINING)
+        try:
+            return self._multi_engine.unassign(model)
+        except MultiEngineError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def multi_engine_report(self) -> dict | None:
+        """The host's multi-engine report (Y-045), or None when
+        no host is wired — accounting nothing across engines."""
+        return self._multi_engine.report() if self._multi_engine is not None else None
+
     # -- task execution (Y-029) -----------------------------------------
 
     def execute_task(
@@ -480,6 +758,8 @@ class NodeAgent:
         memory_bytes: int = 0,
         cpu_share: float = 0.0,
         on_event=None,
+        signature: dict | None = None,
+        already_guarded: bool = False,
     ):
         """Run one task in the sandbox (Y-029), behind this
         agent's lease: ``begin_task`` first (a joined node, the
@@ -496,6 +776,8 @@ class NodeAgent:
         if not isinstance(task, dict) or not isinstance(task.get("id"), str):
             raise NodeAgentError("execute_task needs a task envelope with an id")
         task_id = task["id"]
+        if not already_guarded:
+            self._guard_task(task, signature)
         self.begin_task(task_id, memory_bytes=memory_bytes, cpu_share=cpu_share)
         acquired = False
         try:
@@ -521,6 +803,14 @@ class NodeAgent:
                     )
                 except FailureError as exc:
                     raise NodeAgentError(str(exc)) from exc
+            if self._node_journal is not None:
+                # Y-039: the finished run enters the node's book
+                # — every outcome alike, from the run's own
+                # records (task, result, sandbox report).
+                try:
+                    self._node_journal.record_run(task, outcome[0], outcome[2])
+                except JournalError as exc:
+                    raise NodeAgentError(str(exc)) from exc
             return outcome
         finally:
             try:
@@ -531,15 +821,18 @@ class NodeAgent:
 
     # -- local queue (Y-031) ----------------------------------------------
 
-    def queue_task(self, task: dict) -> dict:
+    def queue_task(self, task: dict, signature: dict | None = None) -> dict:
         """Hold one task in the local queue (Y-031); returns
         its validated queued-task entry. Only a joined node
         takes new held work — a draining node sheds, it does
         not gather. A full queue refuses by the Y-007 name
-        ``queue_full``; a duplicate id refuses by name."""
+        ``queue_full``; a duplicate id refuses by name. When a
+        task guard is wired (Y-043), the task is judged before
+        a queue slot is spent — a refused task is never held."""
         if self._local_queue is None:
             raise NodeAgentError("this agent has no local queue wired")
         self._require("queue_task", JOINED)
+        self._guard_task(task, signature)
         try:
             return self._local_queue.enqueue(task)
         except QueueError as exc:
@@ -550,7 +843,7 @@ class NodeAgent:
         False when it is not held."""
         if self._local_queue is None:
             raise NodeAgentError("this agent has no local queue wired")
-        self._require("cancel_queued_task", JOINED, DRAINING)
+        self._require("cancel_queued_task", JOINED, PAUSED, DRAINING)
         return self._local_queue.cancel(task_id)
 
     def next_queued_task(self) -> dict | None:
@@ -594,6 +887,10 @@ class NodeAgent:
             memory_bytes=memory_bytes,
             cpu_share=cpu_share,
             on_event=on_event,
+            # Y-043: the task was judged by the guard when it
+            # was queued (queue_task) — its signature travelled
+            # with that asking, not with the held envelope.
+            already_guarded=True,
         )
         self._local_queue.remove(entry["task_id"])
         return outcome
@@ -602,6 +899,209 @@ class NodeAgent:
         """The local queue's numbers (Y-031), or None when no
         queue is wired."""
         return self._local_queue.report() if self._local_queue is not None else None
+
+    # -- model fetch duty (Y-037) ---------------------------------------
+
+    def fetch_model(self, request: dict) -> dict:
+        """Fetch a model this node lacks into its store
+        (Y-037): policy-gated, hash-verified against the pin
+        the request carries. Only a started or joined node
+        fetches — a draining node stocks nothing new. The
+        outcome is the fetcher's validated record, never an
+        exception, unless the request itself is malformed."""
+        if self._model_fetcher is None:
+            raise NodeAgentError("this agent has no model fetcher wired")
+        self._require("fetch_model", STARTED, JOINED)
+        try:
+            return self._model_fetcher.fetch_model(request)
+        except ModelFetchError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def fetch_report(self) -> dict | None:
+        """The fetch duty's report (Y-037), or None when no
+        fetcher is wired — fetching nothing, claiming nothing."""
+        return self._model_fetcher.report() if self._model_fetcher is not None else None
+
+    # -- quantisation fitness (Y-038) ------------------------------------
+
+    def quant_verdicts(self, entry: dict) -> list[dict]:
+        """Pre-flight fitness (Y-038): this node's verdict on
+        every quant a registry entry lists, judged against the
+        node's measured census — the answer before placement is
+        attempted, with every refusal reason named."""
+        if self._quant_fitness is None:
+            raise NodeAgentError("this agent has no quant fitness judge wired")
+        try:
+            return self._quant_fitness.verdicts_for_entry(entry)
+        except QuantFitnessError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def quant_fitness_summary(self) -> dict | None:
+        """The fitness judge's summary (Y-038), or None when no
+        judge is wired — judging nothing, claiming nothing."""
+        return self._quant_fitness.summary() if self._quant_fitness is not None else None
+
+    # -- node journal (Y-039) ---------------------------------------------
+
+    def journal_entries(self) -> list[dict]:
+        """Every journal entry (Y-039): the tasks this node
+        ran, in the order they finished. An unwired agent
+        keeps no book and answers an empty list."""
+        return self._node_journal.entries() if self._node_journal is not None else []
+
+    def journal_report(self) -> dict | None:
+        """The journal's report (Y-039), or None when no
+        journal is wired — recording nothing, claiming
+        nothing."""
+        return self._node_journal.report() if self._node_journal is not None else None
+
+    # -- graceful degradation (Y-040) --------------------------------------
+
+    def degradation_state(self) -> dict | None:
+        """The degradation ledger's current state (Y-040), or
+        None when no tracker is wired — judging no loss,
+        claiming no resilience."""
+        return (
+            self._degradation_tracker.state()
+            if self._degradation_tracker is not None
+            else None
+        )
+
+    def degradation_report(self) -> dict | None:
+        """The degradation ledger's report (Y-040) — every
+        transition declared — or None when no tracker is
+        wired."""
+        return (
+            self._degradation_tracker.report()
+            if self._degradation_tracker is not None
+            else None
+        )
+
+    # -- idle generosity (Y-041) -------------------------------------------
+
+    @property
+    def idle_generosity(self):
+        """The node's idle-generosity ledger (Y-041), or None
+        when none is wired."""
+        return self._idle_generosity
+
+    def generosity_advertisement(self) -> dict | None:
+        """Evaluate the node's generosity *now* (Y-041): the
+        validated spare_capacity v1 advertisement built from
+        the agent's own present facts, or None when no ledger
+        is wired — an unwired node advertises nothing. The
+        governor is asked for its verdict (its readings carry
+        the memory and CPU figures); the queue and lifecycle
+        reports give depths and free slots; the latest census,
+        when one has been measured, gives the accelerator
+        kinds the spare rides on — present kinds, never the
+        degradation baseline."""
+        if self._idle_generosity is None:
+            return None
+        readings: dict = {
+            "memory_total_bytes": None,
+            "memory_used_bytes": None,
+            "cpu_share_used": None,
+        }
+        shedding = False
+        if self._governor is not None:
+            try:
+                verdict = self._governor.evaluate()
+            except GovernorError as exc:
+                raise NodeAgentError(str(exc)) from exc
+            shedding = bool(verdict["shedding"])
+            readings = verdict["readings"]
+        queue_free = None
+        if self._local_queue is not None:
+            queue_free = self._local_queue.report()["free_slots"]
+        slots_free = None
+        if self._model_lifecycle is not None:
+            report = self._model_lifecycle.report()
+            slots_free = report["budgets"]["max_slots"] - report["used"]["slots"]
+        accelerators: list[str] = []
+        if self._census_collector is not None and self._census_collector.current:
+            accelerators = [
+                entry["kind"]
+                for entry in self._census_collector.current.get("accelerators", [])
+                if entry.get("kind") != "none"
+            ]
+        load = {
+            "lifecycle_state": self._state,
+            "in_flight": len(self._in_flight),
+            "queue_depth": len(self._local_queue) if self._local_queue is not None else 0,
+            "queue_free_slots": queue_free,
+            "model_slots_free": slots_free,
+            "governor_shedding": shedding,
+            "memory_total_bytes": readings["memory_total_bytes"],
+            "memory_used_bytes": readings["memory_used_bytes"],
+            "cpu_share_used": readings["cpu_share_used"],
+            "accelerators": accelerators,
+            "models_loaded": (
+                self._model_lifecycle.loaded_models()
+                if self._model_lifecycle is not None
+                else []
+            ),
+        }
+        try:
+            return self._idle_generosity.evaluate(load)
+        except GenerosityError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def generosity_report(self) -> dict | None:
+        """The generosity ledger's report (Y-041) — every
+        transition, reasons named — or None when no ledger
+        is wired."""
+        return self._idle_generosity.report() if self._idle_generosity is not None else None
+
+    def _apply_degradation(self, state: dict) -> dict:
+        """Act on a fresh degradation assessment (Y-040)
+        through the model lifecycle: CPU-fallback residents
+        are re-placed into the system pool, stranded
+        residents that are not in use are unloaded, and
+        in-use residents are left running — a task's model is
+        never yanked from under it. Every act, deferral, and
+        failure is named in the returned record."""
+        acts: dict = {
+            "replaced_to_cpu": [],
+            "unloaded_stranded": [],
+            "deferred_in_use": [],
+            "failures": [],
+        }
+        if self._model_lifecycle is None or not state["status"].startswith("degraded"):
+            return acts
+        impact = state["residents"]
+        in_use_names = set(impact["stranded_in_use"])
+        for name in impact["cpu_fallback"]:
+            try:
+                resident = self._model_lifecycle.resident(name)
+            except ModelLifecycleError:
+                continue  # not resident anymore — nothing to move
+            if resident["in_use"] > 0:
+                acts["deferred_in_use"].append(name)
+                continue
+            try:
+                self._model_lifecycle.unload(name)
+                self._model_lifecycle.load(name, placement="system")
+                acts["replaced_to_cpu"].append(name)
+            except ModelLifecycleError:
+                acts["failures"].append(name)
+        for name in impact["stranded"]:
+            if name in in_use_names:
+                acts["deferred_in_use"].append(name)
+                continue
+            try:
+                resident = self._model_lifecycle.resident(name)
+            except ModelLifecycleError:
+                continue
+            if resident["in_use"] > 0:
+                acts["deferred_in_use"].append(name)
+                continue
+            try:
+                self._model_lifecycle.unload(name)
+                acts["unloaded_stranded"].append(name)
+            except ModelLifecycleError:
+                acts["failures"].append(name)
+        return acts
 
     # -- model lifecycle (Y-027) ------------------------------------------
 
@@ -661,7 +1161,29 @@ class NodeAgent:
                 "node.census_changed",
                 {"changed_fields": list(changed), "fabric_connected": False},
             )
-        return {"census": census, "changed_fields": list(changed)}
+        result: dict = {"census": census, "changed_fields": list(changed)}
+        if self._degradation_tracker is not None:
+            # Y-040: the fresh census is judged against the
+            # node's baseline the moment it is measured — a
+            # lost accelerator is declared here, with the
+            # resident impact assessed from the lifecycle's
+            # own records and the store's own entries, and
+            # the resident acts taken through the lifecycle.
+            residents = (
+                self._model_lifecycle.report()["loaded"]
+                if self._model_lifecycle is not None
+                else []
+            )
+            entries = self._model_store.entries() if self._model_store is not None else []
+            try:
+                dstate = self._degradation_tracker.observe_census(
+                    census, residents=residents, store_entries=entries
+                )
+            except DegradationError as exc:
+                raise NodeAgentError(str(exc)) from exc
+            result["degradation"] = dstate
+            result["degradation_acts"] = self._apply_degradation(dstate)
+        return result
 
     # -- internals ------------------------------------------------------
 
@@ -791,17 +1313,18 @@ class NodeAgent:
         return task_id
 
     def end_task(self, task_id: str) -> None:
-        """Release a task lease (joined or draining — a draining
-        node is finishing exactly this work)."""
-        self._require("end_task", JOINED, DRAINING)
+        """Release a task lease (joined, paused, or draining —
+        a paused or draining node is finishing exactly this
+        work)."""
+        self._require("end_task", JOINED, PAUSED, DRAINING)
         if task_id not in self._in_flight:
             raise NodeAgentError(f"task {task_id} is not in flight on this node")
         self._in_flight.discard(task_id)
 
     def drain(self) -> dict:
-        """started/joined → draining: no new leases; health
-        reports the governor shedding."""
-        self._require("drain", STARTED, JOINED)
+        """started/joined/paused → draining: no new leases;
+        health reports the governor shedding."""
+        self._require("drain", STARTED, JOINED, PAUSED)
         self._state = DRAINING
         self._emit(
             "node.draining",
@@ -813,11 +1336,69 @@ class NodeAgent:
         )
         return self.status()
 
+    def pause(self) -> dict:
+        """joined → paused (Y-042): the operator's hand on the
+        brake that is not a goodbye. A paused node takes no new
+        leases, gathers no new held work, and stocks nothing
+        new — but it stays present, keeps its identity, models,
+        and queue, and finishes the leases it already holds
+        (``end_task`` stays open). ``resume()`` is the only way
+        back to joined."""
+        self._require("pause", JOINED)
+        self._state = PAUSED
+        self._emit(
+            "node.paused",
+            {
+                "lifecycle_state": PAUSED,
+                "fabric_connected": False,
+                "in_flight": len(self._in_flight),
+            },
+        )
+        return self.status()
+
+    def resume(self) -> dict:
+        """paused → joined (Y-042): the operator lifts the
+        pause; the node takes work again exactly as before it
+        was paused."""
+        self._require("resume", PAUSED)
+        self._state = JOINED
+        self._emit(
+            "node.resumed",
+            {"lifecycle_state": JOINED, "fabric_connected": False},
+        )
+        return self.status()
+
+    def retire(self) -> dict:
+        """started/joined/paused/draining/stopped → retired
+        (Y-042): the node's permanent farewell. Refused while
+        leases are in flight — a node sheds its work (drain,
+        then end the leases) before it retires, exactly as
+        before a stop — and refused from ``created`` (a node
+        that never started has nothing to retire) and from
+        ``retired`` itself. Retirement is terminal for this
+        agent: ``start()`` will not take it back (its allowed
+        origins are created/stopped), so a retired node that
+        is wanted again is re-provisioned and started as a
+        new agent — the old one's book stays as it was."""
+        self._require("retire", STARTED, JOINED, PAUSED, DRAINING, STOPPED)
+        if self._in_flight:
+            raise NodeAgentError(
+                f"retire refused: {len(self._in_flight)} task(s) still in flight "
+                f"on this node — drain and end them before retiring"
+            )
+        self._state = RETIRED
+        self._retired_at = self._now()
+        self._emit(
+            "node.retired",
+            {"lifecycle_state": RETIRED, "fabric_connected": False},
+        )
+        return self.status()
+
     def stop(self) -> dict:
         """started/joined/draining → stopped. Refused while
         leases are in flight: a node sheds its work (drain, then
         end the leases) before it leaves."""
-        self._require("stop", STARTED, JOINED, DRAINING)
+        self._require("stop", STARTED, JOINED, PAUSED, DRAINING)
         if self._in_flight:
             raise NodeAgentError(
                 f"stop refused: {len(self._in_flight)} task(s) still in flight "
@@ -854,6 +1435,8 @@ class NodeAgent:
         }
         if self._state == DRAINING:
             report["governor"] = {"shedding": True, "reason": "draining"}
+        elif self._state == PAUSED:
+            report["governor"] = {"shedding": True, "reason": "paused"}
         if self._governor is not None:
             try:
                 verdict = self._governor.evaluate()
@@ -862,6 +1445,8 @@ class NodeAgent:
             reasons = list(verdict["reasons"])
             if self._state == DRAINING and "draining" not in reasons:
                 reasons.insert(0, "draining")
+            if self._state == PAUSED and "paused" not in reasons:
+                reasons.insert(0, "paused")
             report["governor"] = {
                 "shedding": bool(reasons),
                 "reason": ", ".join(reasons) if reasons else "within_ceilings",
@@ -1014,9 +1599,20 @@ class NodeAgent:
             ),
             "queue": self.queue_report(),
             "failures": self.failure_report(),
+            "model_fetch": self.fetch_report(),
+            "quant_fitness": self.quant_fitness_summary(),
+            "journal": self.journal_report(),
+            "degradation": self.degradation_state(),
+            "generosity": (
+                self._idle_generosity.current() if self._idle_generosity is not None else None
+            ),
+            "task_security": self.task_security_report(),
+            "power_telemetry": self.power_telemetry_report(),
+            "multi_engine": self.multi_engine_report(),
             "citizen": self._citizen,
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,
+            "retired_at": _fmt(self._retired_at) if self._retired_at else None,
             "census": (
                 self._census_collector.current
                 if self._census_collector is not None

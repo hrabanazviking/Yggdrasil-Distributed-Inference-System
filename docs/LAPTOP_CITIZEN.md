@@ -196,6 +196,36 @@ stdlib module for scripts run from that directory.)
 
 ## Not built / not claimed here
 
+- Model fetch duty (Y-037) is wired by this factory: the
+  agent carries a `model_fetcher=` over its store (policy
+  and transport are the factory's `fetch_policy=` /
+  `fetch_transport=` seams; with no transport handed in, a
+  fetch fails honestly as `no_transport_wired` — no real
+  peer has carried a model for this tree yet; see
+  MODEL_FETCH.md).
+
+- Quantisation fitness (Y-038) is wired by this factory: the
+  agent carries a `quant_fitness=` judge built over the
+  factory's measured census, and the same judge gates its
+  lifecycle — an unfit quant is refused at load, by name,
+  before the loader is asked (see QUANT_FITNESS.md).
+
+- The node journal (Y-039) is wired by this factory: the
+  agent carries a `node_journal=` over its runs — in-memory
+  by default, or the durable JSONL file when the factory is
+  handed `journal_path=` — and `status()` carries its
+  report under `journal` (see NODE_JOURNAL.md).
+- Graceful degradation (Y-040) is wired by this factory:
+  the agent carries a `degradation_tracker=` whose
+  baseline is this factory's measured census — the
+  laptop citizen opens `full` with its measured CUDA
+  baseline; if a later census refresh measures the GPU
+  gone, the loss is declared `degraded_cpu_only`,
+  CPU-fallback residents are re-placed into the system
+  pool, and stranded residents are unloaded or deferred
+  by name (see DEGRADATION.md). No real GPU loss has
+  been staged on purplelongship — NOT PROVEN there.
+
 - No systemd service is installed on purplelongship by
   this slice: enabling `deploy/yggdrasil-node.service`
   there stays the operator's act, with identity
@@ -210,7 +240,12 @@ stdlib module for scripts run from that directory.)
   machine; claim `absent`).
 - No fabric presence: joining is still the local act of
   Y-021 until Part III.
-- Power/thermal telemetry acting on real heat is Y-044;
-  this slice's governor reads the seams it is handed.
+- Power/thermal telemetry has landed (Y-044): this factory
+  wires a `PowerTelemetry` into the agent, and with no
+  readings provider handed in the governor's thermal reading
+  is the telemetry's sampled hottest zone (see
+  POWER_TELEMETRY.md). A live power/thermal run on
+  purplelongship under that module is not claimed there; it
+  belongs to the Part VIII road.
   purplelongship as Jotunheim under sustained load is
   Y-169.

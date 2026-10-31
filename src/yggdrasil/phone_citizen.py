@@ -99,15 +99,21 @@ from jsonschema import validators
 from referencing import Registry, Resource
 
 from yggdrasil.census import CensusCollector, validate_census
+from yggdrasil.degradation import DegradationTracker
 from yggdrasil.failure_shapes import FailureMonitor
 from yggdrasil.governor import ResourceGovernor
 from yggdrasil.governor import validate_policy as validate_governor_policy
+from yggdrasil.idle_generosity import IdleGenerosity
 from yggdrasil.local_queue import LocalQueue
+from yggdrasil.model_fetch import ModelFetcher
 from yggdrasil.model_lifecycle import ModelLifecycle, budgets_from_census
 from yggdrasil.model_store import ModelStore
 from yggdrasil.node_agent import NodeAgent
+from yggdrasil.node_journal import NodeJournal
 from yggdrasil.pi_citizen import hailo_claim_for
+from yggdrasil.quant_fitness import QuantFitness
 from yggdrasil.sandbox import TaskSandbox
+from yggdrasil.task_security import TaskGuard
 
 _ROOT = Path(__file__).resolve().parents[2]
 _SCHEMAS = _ROOT / "contracts" / "schemas"
@@ -553,6 +559,10 @@ def build_phone_citizen_agent(
     simulated: bool = False,
     now=None,
     key_store=None,
+    fetch_transport=None,
+    fetch_policy=None,
+    journal_path=None,
+    task_security_policy=None,
 ) -> tuple[NodeAgent, dict]:
     """The full phone citizen: evaluate first, and refuse a
     machine that does not meet the profile; then wire the
@@ -607,7 +617,12 @@ def build_phone_citizen_agent(
     budgets["ram_bytes"] = int(
         census["ram_gb"] * profile["governor_policy"]["max_memory_fraction"] * (1024**3)
     )
-    lifecycle = ModelLifecycle(config.node_id, store, now=now, **budgets)
+    fitness = QuantFitness(
+        config.node_id, device_class=config.device_class, census=census
+    )
+    lifecycle = ModelLifecycle(
+        config.node_id, store, now=now, fitness_checker=fitness, **budgets
+    )
     sandbox = TaskSandbox(config.node_id, now=now)
     queue = LocalQueue(config.node_id, now=now)
     monitor = FailureMonitor(
@@ -617,6 +632,30 @@ def build_phone_citizen_agent(
         model_lifecycle=lifecycle,
         now=now,
     )
+    if fetch_policy is None:
+        # The phone's small-models-only law (Y-036) binds its
+        # fetch duty too: the default fetch policy caps a
+        # fetch at the profile's own model ceiling.
+        fetch_policy = {
+            "version": 1,
+            "allow_peer_fetch": True,
+            "named_sources": [],
+            "max_model_bytes": int(profile["max_model_size_gb"] * (1024**3)),
+            "min_free_disk_bytes": 0,
+        }
+    fetcher = ModelFetcher(
+        config.node_id,
+        store,
+        policy=fetch_policy,
+        transport=fetch_transport,
+        now=now,
+        simulated=simulated,
+    )
+    tracker = DegradationTracker(config.node_id, now=now)
+    generosity = IdleGenerosity(config.node_id, now=now)
+    guard = TaskGuard(config.node_id, task_security_policy, now=now)
+    tracker.observe_census(census)
+    journal = NodeJournal(config.node_id, path=journal_path, now=now)
     agent = NodeAgent(
         config,
         key_store=key_store,
@@ -629,6 +668,12 @@ def build_phone_citizen_agent(
         sandbox=sandbox,
         local_queue=queue,
         failure_monitor=monitor,
+        model_fetcher=fetcher,
+        quant_fitness=fitness,
+        node_journal=journal,
+        degradation_tracker=tracker,
+        idle_generosity=generosity,
+        task_guard=guard,
         citizen=report,
     )
     return agent, report

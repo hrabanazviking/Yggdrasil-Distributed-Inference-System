@@ -80,8 +80,16 @@ _SCHEMAS = _ROOT / "contracts" / "schemas"
 
 TRANSPORT = "local-only"
 HEALTH_PATHS = ("/health", "/health/heartbeat")
-_PRESENT_STATES = ("started", "joined", "draining")
-_LIFECYCLE_STATES = ("created", "started", "joined", "draining", "stopped")
+_PRESENT_STATES = ("started", "joined", "paused", "draining")
+_LIFECYCLE_STATES = (
+    "created",
+    "started",
+    "joined",
+    "paused",
+    "draining",
+    "stopped",
+    "retired",
+)
 
 
 def _load_schema(name: str) -> dict:

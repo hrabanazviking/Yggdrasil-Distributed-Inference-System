@@ -11,6 +11,19 @@ retire anything — those verbs arrive with the machinery they act
 on (task submission grows at Y-093, node operator tools at
 Y-042). What it does is look, honestly:
 
+Y-042 grows the door its operator's hand: the ``node``
+subcommands — ``node drain``, ``node pause``, ``node resume``,
+``node inspect``, ``node retire`` — drive an
+``OperatorTools`` (``yggdrasil.operator_tools``) over a node
+agent handed in by the caller, the deployment wiring that owns
+a live agent in this process. Every verb comes back as its
+ledgered ``operator_action`` v1 (inspect as the
+``node_inspection`` v1), and a refused verb is exit 2 with the
+node's refusal on stderr. With no tools handed in, the ``node``
+commands refuse by name: there is no demo agent behind the
+verbs, because draining a fake node would be a lie in the
+shape of a feature. The read-only views above are unchanged.
+
 - views are built only from validated contract data — the
   registry snapshot, the recorded ResultEnvelopes, and the
   HealthReports (Y-006/Y-007 shapes), never from a second,
@@ -35,6 +48,7 @@ import argparse
 import json
 import sys
 
+from yggdrasil.operator_tools import OperatorTools, OperatorToolsError
 from yggdrasil.simulator import TRANSPORT, Simulator, SimulatorError
 
 SOURCE_LABEL = (
@@ -233,6 +247,34 @@ def _render_health(door: OperatorDoor, node_id: str | None) -> str:
     return "\n".join(lines)
 
 
+def _render_node_action(record: dict) -> str:
+    lines = [
+        (
+            f"node {record['node_id']}: {record['action']} {record['outcome']}"
+            f"  {record['from_state']} -> {record['to_state']}"
+            f"  by {record['actor']}  in flight: {record['in_flight']}"
+        )
+    ]
+    if record["reason"]:
+        lines.append(f"reason: {record['reason']}")
+    return "\n".join(lines)
+
+
+def _render_inspection(inspection: dict) -> str:
+    lines = [
+        (
+            f"node {inspection['node_id']}: {inspection['lifecycle_state']}"
+            f"  {inspection['liveness']}  {inspection['device_class']}"
+            f"  identity verified: {inspection['identity_verified']}"
+            f"  in flight: {_join(inspection['in_flight'])}"
+            f"  queue: {inspection['queue_depth']}"
+            f"  models loaded: {_join(inspection['models_loaded'])}"
+            f"  census measured: {inspection['census_measured']}"
+        )
+    ]
+    return "\n".join(lines)
+
+
 def _parser() -> argparse.ArgumentParser:
     shared = argparse.ArgumentParser(add_help=False)
     shared.add_argument(
@@ -247,13 +289,74 @@ def _parser() -> argparse.ArgumentParser:
     commands.add_parser("tasks", parents=[shared], help="list recorded tasks")
     health = commands.add_parser("health", parents=[shared], help="list health")
     health.add_argument("node_id", nargs="?", help="only this node")
+    node = commands.add_parser(
+        "node", help="operator tools for one node agent (Y-042)"
+    )
+    verbs = node.add_subparsers(dest="node_action", required=True)
+    for verb in ("drain", "pause", "resume", "retire"):
+        verb_parser = verbs.add_parser(verb, parents=[shared], help=f"{verb} the node")
+        verb_parser.add_argument(
+            "--reason", default=None, help="the operator's stated reason, ledgered"
+        )
+    verbs.add_parser("inspect", parents=[shared], help="inspect the node")
     return parser
 
 
-def main(argv: list[str] | None = None, *, door: OperatorDoor | None = None) -> int:
+def _node_command(args, tools: OperatorTools | None) -> int:
+    """The Y-042 verbs. They act on a node agent handed in by
+    the deployment wiring; with none handed in they refuse by
+    name rather than inventing a demo agent to act on."""
+    if tools is None:
+        print(
+            "error: node operator tools need a node agent handed in by the "
+            "deployment wiring (no fabric exists yet to reach a daemon "
+            "elsewhere, and there is no demo agent behind these verbs)",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        if args.node_action == "inspect":
+            inspection = tools.inspect()
+            payload = {
+                "source": "local-agent",
+                "simulated": inspection["simulated"],
+                "inspection": inspection,
+                "action": tools.actions()[-1],
+            }
+            text = _render_inspection(inspection)
+        else:
+            verb = {
+                "drain": tools.drain,
+                "pause": tools.pause,
+                "resume": tools.resume,
+                "retire": tools.retire,
+            }[args.node_action]
+            record = verb(reason=args.reason)
+            payload = {
+                "source": "local-agent",
+                "simulated": record["simulated"],
+                "action": record,
+            }
+            text = _render_node_action(record)
+    except OperatorToolsError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
+    print(json.dumps(payload, indent=2, sort_keys=True) if args.json else text)
+    return 0
+
+
+def main(
+    argv: list[str] | None = None,
+    *,
+    door: OperatorDoor | None = None,
+    tools: OperatorTools | None = None,
+) -> int:
     """The CLI entry point. Returns a process exit code: 0 for
-    a view shown, 2 for a question the door cannot answer."""
+    a view shown or a verb applied, 2 for a question the door
+    cannot answer or a verb the node refused."""
     args = _parser().parse_args(argv)
+    if args.command == "node":
+        return _node_command(args, tools)
     if door is None:
         door = OperatorDoor(build_demo_mesh())
     try:
