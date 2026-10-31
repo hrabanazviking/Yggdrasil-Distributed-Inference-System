@@ -43,7 +43,11 @@ every later Part II slice hangs its machinery on:
   ``yggdrasil.census`` (probe-measured, never assumed), and
   ``refresh_census()`` re-measures and records a
   ``node.census_changed`` event naming the fields that changed.
-  The skeleton itself measures nothing until asked.
+  The skeleton itself measures nothing until asked. Engine
+  adapters (Y-023 onward) feed the collector through the
+  constructor's ``census_engines`` / ``census_models`` seams —
+  an adapter's own discovery, in the census exactly as the
+  adapter reported it.
 - **observability:** every lifecycle move is recorded as a
   Y-013 EventEnvelope from the ``node_agent`` component (the
   first real emitter in the tree), and written to the config's
@@ -219,6 +223,8 @@ class NodeAgent:
         key_store: LocalKeyStore | None = None,
         now=None,
         census_probes=None,
+        census_engines=None,
+        census_models=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -226,8 +232,13 @@ class NodeAgent:
         # The capability census (Y-022): measured by probes the
         # caller may inject (tests, odd hardware); the collector
         # is built lazily so constructing an agent never measures
-        # a machine nobody asked about yet.
+        # a machine nobody asked about yet. Engine adapters
+        # (Y-023 onward) feed their live truth through
+        # census_engines / census_models — lists or callables,
+        # exactly as the collector accepts (Y-022).
         self._census_probes = census_probes
+        self._census_engines = census_engines
+        self._census_models = census_models
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
         self._identity: dict | None = None
@@ -272,7 +283,11 @@ class NodeAgent:
     def _collector(self) -> CensusCollector:
         if self._census_collector is None:
             self._census_collector = CensusCollector(
-                self.config.node_id, probes=self._census_probes, now=self._now
+                self.config.node_id,
+                probes=self._census_probes,
+                engines=self._census_engines,
+                models_present=self._census_models,
+                now=self._now,
             )
         return self._census_collector
 

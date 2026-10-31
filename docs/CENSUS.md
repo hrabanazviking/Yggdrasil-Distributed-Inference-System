@@ -102,8 +102,10 @@ tested deterministically.
 
 ## Not built here
 
-No engine discovery (adapters Y-023 – Y-025 report their own
-reachability into the census), no model presence (Y-026, and
+Engine discovery now lands slice by slice (the Ollama
+adapter, Y-023, reports its own reachability into the census
+through the collector's callable seams; Aesir and llama.cpp
+follow at Y-024 – Y-025), no model presence (Y-026, and
 only with hash proof), no governor acting on these numbers
 (Y-028 — the governor's thermal decisions cite this telemetry
 at Y-044), no fabric carrying the census to peers (Part III;

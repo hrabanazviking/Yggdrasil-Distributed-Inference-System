@@ -128,7 +128,7 @@ cause on stderr — no traceback, no half-started node.
 
 ## Not built here
 
-No census (Y-022), no engines (Y-023 – Y-025), no model store
+No model store
 (Y-026), no governor beyond drain's shedding flag (Y-028), no
 task execution (Y-029), no heartbeat endpoint (Y-030), no queue
 (Y-031), no fabric join (Part III), and no real hardware citizen
