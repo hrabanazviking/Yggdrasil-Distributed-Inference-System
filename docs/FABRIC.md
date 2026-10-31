@@ -84,7 +84,9 @@ transport's delivery rules, exactly as Y-049 benchmarked them.
 ## Not built here
 
 - TLS carriage of these channels, with Y-011 node certificates
-  on every connection and no plaintext mode, is Y-051.
+  on every connection and no plaintext mode, is built at
+  Y-051 (`docs/TLS_CHANNELS.md`): real mutual TLS 1.3 with
+  the peer binding checked against Y-011 by key.
 - Discovery (mDNS + seed list) is Y-052; nodes here attach by
   name the caller already knows.
 - The registry service riding these topics is Y-053,
@@ -94,7 +96,8 @@ transport's delivery rules, exactly as Y-049 benchmarked them.
 - No node-agent seam: the agent joins the fabric when the
   registry and heartbeat slices give it something to say
   (Y-053/Y-054). Components use `Fabric` directly until then.
-- The real wire — sockets under TLS between machines — arrives
-  with Y-051 and is proven on hardware in Part VIII; the
+- The real wire — sockets under TLS between machines — is
+  carried by Y-051's TLS channels and proven on the real
+  LAN at Y-062 and on hardware in Part VIII; the
   losers of Y-049's race stay swappable through the Y-069
   fabric conformance kit.
