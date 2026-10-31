@@ -15,7 +15,7 @@
 
 ## Position
 
-- Banked: 10 / 244. In progress: Part I (next: Y-011 identity foundation).
+- Banked: 11 / 244. In progress: Part I (next: Y-012 nine-worlds role model as data).
 
 ## Slice log
 
@@ -32,3 +32,4 @@
 | Y-008 | BANKED | Registry contract v1: spec §4.2 model entry schema with graded measured speeds |
 | Y-009 | BANKED | Scaffolding: package + pyproject + systemd unit as data + manual-dispatch CI; pytest 9 passed, ruff clean (venv) |
 | Y-010 | BANKED | Threat model: `docs/THREAT_MODEL.md` + register `security/threat_register.json` (10 threats; roadmap's 4 named enemies = T-01–T-04) shaped by `threat_record.schema.json`; every mitigation mapped to its building slice, residual risks stated, no control claimed built; pytest 16 passed, ruff clean |
+| Y-011 | BANKED | Identity foundation: pure-Python Ed25519 (RFC 8032, proven against the RFC's published test vectors fetched from rfc-editor.org; NOT constant-time, stated) in `src/yggdrasil/ed25519.py`; per-node keypairs + mesh-root-issued node certificates (`contracts/schemas/node_certificate.schema.json`, chain/fingerprint/window verification) in `src/yggdrasil/identity.py`; key custody behind a store interface — local store mode 0600, no overwrite, Kista detected-not-faked (integration = Y-196), custody reported honestly; `docs/IDENTITY.md` (revocation NOT built — T-01 residual stands); pytest 30 passed, ruff clean; README md5 unchanged |
