@@ -234,6 +234,11 @@ and watts via `sample_power_telemetry()`, carries the
 history report in `status()` under `power_telemetry`, and
 cites the governor's last verdict against the reading it
 rests on via `governor_citation()`; the Pi and laptop
-factories wire it; see POWER_TELEMETRY.md); no fabric
+factories wire it; see POWER_TELEMETRY.md); and the
+multi-engine host has landed (Y-045 — an agent built with
+`multi_engine=` assigns resident models to exactly one of
+its hosted engines, accounts slots across all of them, and
+carries the host's report in `status()` under
+`multi_engine`; see MULTI_ENGINE.md); no fabric
 join (Part III). The skeleton has run in tests on this VM only;
 nothing here is a hardware claim.

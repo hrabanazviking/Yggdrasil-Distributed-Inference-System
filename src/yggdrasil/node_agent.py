@@ -199,6 +199,16 @@ every later Part II slice hangs its machinery on:
   ``generosity_report()`` reads the ledger back and
   ``status()`` carries the last advertisement. Without one
   wired, the agent advertises nothing, exactly as before.
+- **multi-engine host (Y-045, grown onto the skeleton):** a
+  ``multi_engine=`` handed in at construction is the node's
+  host of several engines side by side over the shared model
+  lifecycle (``yggdrasil.multi_engine``): resident models are
+  assigned to exactly one engine, slots are accounted across
+  engines, and tasks route by their model's own facts.
+  ``assign_model_to_engine`` / ``unassign_model`` delegate to
+  it, and ``status()`` carries its validated report. Without
+  one wired, the agent accounts nothing across engines,
+  exactly as before.
 - **observability:** every lifecycle move is recorded as a
   Y-013 EventEnvelope from the ``node_agent`` component (the
   first real emitter in the tree), and written to the config's
@@ -247,6 +257,7 @@ from yggdrasil.idle_generosity import GenerosityError
 from yggdrasil.local_queue import QueueError
 from yggdrasil.model_fetch import ModelFetchError
 from yggdrasil.model_lifecycle import ModelLifecycleError
+from yggdrasil.multi_engine import MultiEngineError
 from yggdrasil.node_journal import JournalError
 from yggdrasil.observability import LocalJsonlSink, make_event
 from yggdrasil.power_telemetry import PowerTelemetryError
@@ -405,6 +416,7 @@ class NodeAgent:
         idle_generosity=None,
         task_guard=None,
         power_telemetry=None,
+        multi_engine=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -491,6 +503,13 @@ class NodeAgent:
         # governor_citation() pairs the governor's verdicts
         # with the reading they rest on.
         self._power_telemetry = power_telemetry
+        # The multi-engine host (Y-045): this node's engines
+        # hosted side by side over the shared lifecycle, slots
+        # accounted across engines. When wired, assignments and
+        # routing delegate to it and status() carries its
+        # report. The host's lifecycle is the deployment's to
+        # keep the same object as model_lifecycle=.
+        self._multi_engine = multi_engine
         self._health_endpoint: NodeHealthEndpoint | None = None
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
@@ -685,6 +704,47 @@ class NodeAgent:
             return self._power_telemetry.cite(state)
         except PowerTelemetryError as exc:
             raise NodeAgentError(str(exc)) from exc
+
+    # -- multi-engine host (Y-045) -------------------------------------------
+
+    @property
+    def multi_engine(self):
+        """The wired multi-engine host (Y-045), or None when
+        the agent was built without one."""
+        return self._multi_engine
+
+    def assign_model_to_engine(
+        self, model: str, engine: str, *, placement: str = "auto", pinned: bool = False
+    ) -> dict:
+        """Assign one resident model to one hosted engine
+        (Y-045): the host checks the engine's own model list,
+        the shared lifecycle spends the slot. A started or
+        joined node assigns, as it loads (Y-027)."""
+        if self._multi_engine is None:
+            raise NodeAgentError("this agent has no multi-engine host wired")
+        self._require("assign_model_to_engine", STARTED, JOINED)
+        try:
+            return self._multi_engine.assign(
+                model, engine, placement=placement, pinned=pinned
+            )
+        except MultiEngineError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def unassign_model(self, model: str) -> dict:
+        """Unassign one model from its engine (Y-045), unloading
+        it — also allowed while draining, as unloads are."""
+        if self._multi_engine is None:
+            raise NodeAgentError("this agent has no multi-engine host wired")
+        self._require("unassign_model", STARTED, JOINED, DRAINING)
+        try:
+            return self._multi_engine.unassign(model)
+        except MultiEngineError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def multi_engine_report(self) -> dict | None:
+        """The host's multi-engine report (Y-045), or None when
+        no host is wired — accounting nothing across engines."""
+        return self._multi_engine.report() if self._multi_engine is not None else None
 
     # -- task execution (Y-029) -----------------------------------------
 
@@ -1548,6 +1608,7 @@ class NodeAgent:
             ),
             "task_security": self.task_security_report(),
             "power_telemetry": self.power_telemetry_report(),
+            "multi_engine": self.multi_engine_report(),
             "citizen": self._citizen,
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,
