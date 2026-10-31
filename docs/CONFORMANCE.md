@@ -114,5 +114,5 @@ naming that check.
   (audio, say) earns its own check in a later slice; until
   then an unclaimed capability is simply not exercised,
   and a named-but-unclaimed one is a stated skip.
-- The mixed-engine soak (one node, 1,000 tasks) is Y-047;
-  the Part II gate is Y-048.
+- The mixed-engine soak (one node, 1,000 tasks) landed
+  in Y-047 (`docs/SOAK.md`); the Part II gate is Y-048.

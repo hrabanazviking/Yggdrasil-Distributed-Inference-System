@@ -108,4 +108,4 @@ before.
 - The conformance kit every new adapter must pass landed
   in Y-046 (`docs/CONFORMANCE.md`) — all three adapters this
   host holds pass it in the kit's own suite; the
-  mixed-engine soak is Y-047.
+  mixed-engine soak landed in Y-047 (`docs/SOAK.md`).
