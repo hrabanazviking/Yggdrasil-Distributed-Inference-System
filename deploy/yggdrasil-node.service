@@ -1,0 +1,13 @@
+[Unit]
+Description=Yggdrasil node agent (native service — no Docker, per house law)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -m yggdrasil.node_agent
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

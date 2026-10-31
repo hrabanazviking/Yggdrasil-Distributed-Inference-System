@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yggdrasil-mesh"
+version = "0.0.1"
+description = "Yggdrasil Distributed Inference System — a local, self-organising inference mesh (orchestration only; engines are wrapped, never re-implemented)."
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = ["jsonschema>=4.10"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "ruff>=0.4"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

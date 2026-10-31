@@ -1,0 +1,18 @@
+name: ci
+
+# Manual-dispatch only — Volmarr's standing default for every repo:
+# GitHub Actions never auto-fires on pushes.
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e ".[dev]"
+      - run: ruff check src tests
+      - run: pytest -q
