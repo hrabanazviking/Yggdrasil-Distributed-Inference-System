@@ -115,4 +115,6 @@ naming that check.
   then an unclaimed capability is simply not exercised,
   and a named-but-unclaimed one is a stated skip.
 - The mixed-engine soak (one node, 1,000 tasks) landed
-  in Y-047 (`docs/SOAK.md`); the Part II gate is Y-048.
+  in Y-047 (`docs/SOAK.md`); the Part II gate landed at
+  Y-048 (`docs/PART_II_GATE.md`), running this kit green
+  for all three citizens against their engines.

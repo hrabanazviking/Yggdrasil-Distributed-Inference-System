@@ -102,5 +102,6 @@ unshaped policy) refused before any task is dealt.
   are later parts' work, not this slice's claim.
 - The Part II gate — three real citizens (Pi, laptop,
   VM) running the conformance kit green against their
-  real engines — is Y-048, and it inherits nothing from
-  this slice's verdict.
+  real engines — landed at Y-048 (`docs/PART_II_GATE.md`),
+  and it inherits nothing from this slice's verdict: the
+  gate re-ran the kit and the citizens itself.
