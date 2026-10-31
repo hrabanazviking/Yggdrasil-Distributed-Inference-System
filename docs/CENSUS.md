@@ -122,5 +122,7 @@ has been measured on its own hardware at Y-034 (see
 LAPTOP_CITIZEN.md — including its VRAM honesty: this
 module's system probes read no VRAM, so the laptop
 citizen's gate requires the vendor tool's reading of the
-actual card supplied as a probe); the VM citizen is
-measured on its own at Y-035.
+actual card supplied as a probe); the VM citizen has been
+measured on its own at Y-035 (see VM_CITIZEN.md — this VM's
+census is that citizen's own: CPU-only, with no thermal
+reading and no VRAM, both reported as absences).

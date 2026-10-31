@@ -172,7 +172,9 @@ a citizen carries `citizen: None`; see PI_CITIZEN.md); and the
 laptop citizen has landed (Y-034 — the same factory shape on
 purplelongship-class x86 + CUDA, its census carrying the
 Aesir engine's ledger grade through the collector's engine
-seam; see LAPTOP_CITIZEN.md); no fabric
-join (Part III), and the VM citizen is still
-to come (Y-035). The skeleton has run in tests on this VM only;
+seam; see LAPTOP_CITIZEN.md); the VM citizen has landed
+(Y-035 — the same factory shape on this VM as a CPU-only
+node, its cpu_only gate biting on any accelerator in the
+census; see VM_CITIZEN.md); no fabric
+join (Part III). The skeleton has run in tests on this VM only;
 nothing here is a hardware claim.
