@@ -89,7 +89,8 @@ and the states the verb is allowed from.
 truth: `present` while started/joined/draining, `gone`
 otherwise; `governor: {shedding: true, reason: "draining"}`
 while draining. It deliberately claims nothing early —
-`models_loaded` is empty until engines land (Y-023 onward),
+`models_loaded` comes from the model lifecycle (Y-027) when
+one is wired and is empty until then,
 `queue_depth` is 0 until the local queue exists (Y-031), and
 the heartbeat-carrying endpoint is Y-030.
 
@@ -129,7 +130,10 @@ cause on stderr — no traceback, no half-started node.
 ## Not built here
 
 The model store has landed (Y-026 — an agent built with
-`model_store=` lists only hash-verified models in its census);
+`model_store=` lists only hash-verified models in its census),
+and the model lifecycle has landed (Y-027 — an agent built
+with `model_lifecycle=` loads and unloads store-verified
+models into budgeted slots and reports them in `health()`);
 no governor beyond drain's shedding flag (Y-028), no
 task execution (Y-029), no heartbeat endpoint (Y-030), no queue
 (Y-031), no fabric join (Part III), and no real hardware citizen

@@ -35,9 +35,10 @@ every later Part II slice hangs its machinery on:
   from lifecycle truth — present while started/joined/draining,
   gone otherwise, governor shedding named while draining. The
   endpoint Part III's heartbeats will carry is Y-030; models
-  loaded stays empty until engines land (Y-023 onward) and queue
-  depth stays 0 until the local queue exists (Y-031) — the
-  report claims neither early.
+  loaded comes from the model lifecycle (Y-027) when one is
+  wired and stays empty until then, and queue depth stays 0
+  until the local queue exists (Y-031) — the report claims
+  neither early.
 - **census (Y-022, grown onto the skeleton):** ``census()``
   answers the node's measured CapabilityCensus through
   ``yggdrasil.census`` (probe-measured, never assumed), and
@@ -50,6 +51,15 @@ every later Part II slice hangs its machinery on:
   adapter reported it. A model store (Y-026) handed in as
   ``model_store=`` fills the models seam by default: the
   census then lists only hash-verified models.
+- **model lifecycle (Y-027, grown onto the skeleton):** a
+  ``model_lifecycle=`` handed in at construction owns which
+  store-verified models are resident in slots under the node's
+  VRAM/RAM budgets, with measured swap costs. ``load_model`` /
+  ``unload_model`` delegate to it (a started or joined node
+  loads; unloading is also allowed while draining), and
+  ``health()`` then reports its resident models as
+  ``models_loaded`` — until one is wired, that list stays
+  empty, as before: the report claims nothing early.
 - **observability:** every lifecycle move is recorded as a
   Y-013 EventEnvelope from the ``node_agent`` component (the
   first real emitter in the tree), and written to the config's
@@ -90,6 +100,7 @@ from yggdrasil.identity import (
     fingerprint,
     verify_certificate,
 )
+from yggdrasil.model_lifecycle import ModelLifecycleError
 from yggdrasil.observability import LocalJsonlSink, make_event
 
 _ROOT = Path(__file__).resolve().parents[2]
@@ -228,6 +239,7 @@ class NodeAgent:
         census_engines=None,
         census_models=None,
         model_store=None,
+        model_lifecycle=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -249,6 +261,10 @@ class NodeAgent:
         if census_models is None and model_store is not None:
             census_models = model_store.model_names_for_census
         self._census_models = census_models
+        # The model lifecycle (Y-027): residency in slots under
+        # memory budgets, with measured swap costs. When wired,
+        # health() reports its resident models.
+        self._model_lifecycle = model_lifecycle
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
         self._identity: dict | None = None
@@ -293,6 +309,36 @@ class NodeAgent:
         """The node's model store (Y-026), or None when the
         agent was built without one."""
         return self._model_store
+
+    @property
+    def model_lifecycle(self):
+        """The node's model lifecycle manager (Y-027), or None
+        when the agent was built without one."""
+        return self._model_lifecycle
+
+    # -- model lifecycle (Y-027) ------------------------------------------
+
+    def load_model(self, name: str, **kwargs) -> dict:
+        """Load a store-verified model into a slot (Y-027).
+        Only a started or joined node loads models."""
+        if self._model_lifecycle is None:
+            raise NodeAgentError("this agent has no model lifecycle wired")
+        self._require("load_model", STARTED, JOINED)
+        try:
+            return self._model_lifecycle.load(name, **kwargs)
+        except ModelLifecycleError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def unload_model(self, name: str) -> dict:
+        """Unload a resident model (Y-027); also allowed while
+        draining, when a node is shedding exactly this weight."""
+        if self._model_lifecycle is None:
+            raise NodeAgentError("this agent has no model lifecycle wired")
+        self._require("unload_model", STARTED, JOINED, DRAINING)
+        try:
+            return self._model_lifecycle.unload(name)
+        except ModelLifecycleError as exc:
+            raise NodeAgentError(str(exc)) from exc
 
     # -- census (Y-022) -------------------------------------------------
 
@@ -484,8 +530,9 @@ class NodeAgent:
     def health(self) -> dict:
         """The Y-006 HealthReport, told from lifecycle truth.
 
-        Models loaded is empty and queue depth is 0 because
-        neither engines (Y-023) nor a queue (Y-031) exist yet —
+        Models loaded comes from the model lifecycle (Y-027)
+        when one is wired, and stays empty until then; queue
+        depth stays 0 until the local queue exists (Y-031) —
         the report claims neither early. The endpoint Part III's
         heartbeats carry is Y-030."""
         report: dict = {
@@ -493,7 +540,11 @@ class NodeAgent:
             "at": _fmt(self._now()),
             "liveness": "present" if self._state in _PRESENT_STATES else "gone",
             "queue_depth": 0,
-            "models_loaded": [],
+            "models_loaded": (
+                self._model_lifecycle.loaded_models()
+                if self._model_lifecycle is not None
+                else []
+            ),
         }
         if self._state == DRAINING:
             report["governor"] = {"shedding": True, "reason": "draining"}
@@ -511,6 +562,11 @@ class NodeAgent:
             "key_fingerprint": self._fingerprint,
             "custody": describe_custody(),
             "in_flight": sorted(self._in_flight),
+            "models_loaded": (
+                self._model_lifecycle.loaded_models()
+                if self._model_lifecycle is not None
+                else []
+            ),
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,
             "census": (

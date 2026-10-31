@@ -90,9 +90,10 @@ will verify against the same pins.
 
 ## Not built here
 
-No loading or unloading of models into engine slots (Y-027 —
-loaded is a different fact from present, and the agent's health
-report still claims no loaded models), no fetching (Y-037), no
+Loading and unloading of models into slots is Y-027 (landed:
+`docs/MODEL_LIFECYCLE.md` — the agent's health report now lists
+resident models when a lifecycle is wired); no fetching
+(Y-037), no
 corrupt-model failure shape beyond this slice's status report
 (Y-032 names the failure classes), and no hardware claim: the
 suite's fixture files are SIMULATED byte strings with real
