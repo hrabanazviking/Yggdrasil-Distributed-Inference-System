@@ -90,16 +90,16 @@ slots behind the same `DiscoveryService` shape.
 - Real mDNS / real-LAN carriage is Y-062 (Pi + laptop
   + VM over the home network, discovery unaided);
   hardware proof is Part VIII's.
-- The registry service — nodes registering census +
-  models with the peers found here — is Y-053;
-  heartbeats and present → suspect → gone liveness
-  ageing are Y-054 (discovery expiry is *table*
-  freshness, not the liveness verdict).
+- The registry service is built at Y-053
+  (`docs/REGISTRY_SERVICE.md`): nodes register census +
+  models at any replica, and every replica holds the
+  whole truth; heartbeats and present → suspect → gone
+  liveness ageing are Y-054 (discovery expiry is
+  *table* freshness, not the liveness verdict).
 - No node-agent seam: as with the fabric (Y-050), the
-  agent joins discovery when the registry and
-  heartbeat slices give it traffic of its own
-  (Y-053/Y-054). Components use `DiscoveryService`
-  directly until then.
+  agent joins discovery when the heartbeat slice gives
+  it traffic of its own (Y-054). Components use
+  `DiscoveryService` directly until then.
 - Certificate revocation is still not built (Y-011's
   named residual): an expired certificate is refused,
   a revoked-but-in-window one is not yet detectable.

@@ -93,13 +93,16 @@ transport's delivery rules, exactly as Y-049 benchmarked them.
   when the certificate verifies. Nodes here still attach
   by name the caller already knows — discovery feeds
   the registry service at Y-053, not this core.
-- The registry service riding these topics is Y-053,
-  heartbeats and liveness Y-054, epidemic gossip of registry
-  and health state Y-055, and the CRDT stores of ADR-003
-  Y-056.
-- No node-agent seam: the agent joins the fabric when the
-  registry and heartbeat slices give it something to say
-  (Y-053/Y-054). Components use `Fabric` directly until then.
+- The registry service is built at Y-053
+  (`docs/REGISTRY_SERVICE.md`) as a replicated service
+  in its own right; its registrations riding these
+  topics arrive with the real-LAN carriage at Y-062.
+  Heartbeats and liveness are Y-054, epidemic gossip of
+  registry and health state Y-055, and the CRDT stores
+  of ADR-003 Y-056.
+- No node-agent seam: the agent joins the fabric when
+  the heartbeat slice gives it something to say
+  (Y-054). Components use `Fabric` directly until then.
 - The real wire — sockets under TLS between machines — is
   carried by Y-051's TLS channels and proven on the real
   LAN at Y-062 and on hardware in Part VIII; the
