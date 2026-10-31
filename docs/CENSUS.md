@@ -117,5 +117,10 @@ thermal decisions cite this telemetry at Y-044), no fabric carrying the census t
 the registry service, Y-053, is where censuses travel), and no
 hardware citizen proof: a census measured on this VM is a fact
 about this VM. The Pi citizen has been measured on its own
-hardware at Y-033 (see PI_CITIZEN.md); the laptop and VM
-citizens are measured on theirs at Y-034 – Y-035.
+hardware at Y-033 (see PI_CITIZEN.md); the laptop citizen
+has been measured on its own hardware at Y-034 (see
+LAPTOP_CITIZEN.md — including its VRAM honesty: this
+module's system probes read no VRAM, so the laptop
+citizen's gate requires the vendor tool's reading of the
+actual card supplied as a probe); the VM citizen is
+measured on its own at Y-035.

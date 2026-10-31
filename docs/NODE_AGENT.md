@@ -168,7 +168,11 @@ carries the failure report in `status()`; see
 FAILURE_SHAPES.md); and the Pi citizen has landed (Y-033 —
 an agent built by its factory carries the validated citizen
 report in `status()` under `citizen`, and one built without
-a citizen carries `citizen: None`; see PI_CITIZEN.md); no fabric
-join (Part III), and the laptop and VM citizens are still
-to come (Y-034 – Y-035). The skeleton has run in tests on this VM only;
+a citizen carries `citizen: None`; see PI_CITIZEN.md); and the
+laptop citizen has landed (Y-034 — the same factory shape on
+purplelongship-class x86 + CUDA, its census carrying the
+Aesir engine's ledger grade through the collector's engine
+seam; see LAPTOP_CITIZEN.md); no fabric
+join (Part III), and the VM citizen is still
+to come (Y-035). The skeleton has run in tests on this VM only;
 nothing here is a hardware claim.
