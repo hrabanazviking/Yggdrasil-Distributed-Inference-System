@@ -93,9 +93,11 @@ with its stated not-constant-time limit.
 
 ## Not built here
 
-- Discovery is Y-052: channels here are opened to peers
-  the caller already names, over sockets the caller
-  already holds.
+- Discovery is built at Y-052 (`docs/DISCOVERY.md`):
+  nodes find each other by mDNS-shaped announcement and
+  seed list, admitted only when their Y-011 certificate
+  verifies. Channels here are still opened to peers the
+  caller names, over sockets the caller already holds.
 - Wiring the node agent to open TLS channels itself
   arrives with the registry and heartbeat slices that
   give it fabric traffic of its own (Y-053/Y-054).

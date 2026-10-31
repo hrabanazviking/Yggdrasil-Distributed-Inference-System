@@ -87,8 +87,12 @@ transport's delivery rules, exactly as Y-049 benchmarked them.
   on every connection and no plaintext mode, is built at
   Y-051 (`docs/TLS_CHANNELS.md`): real mutual TLS 1.3 with
   the peer binding checked against Y-011 by key.
-- Discovery (mDNS + seed list) is Y-052; nodes here attach by
-  name the caller already knows.
+- Discovery (mDNS + seed list, no cloud rendezvous) is
+  built at Y-052 (`docs/DISCOVERY.md`): nodes announce
+  with their Y-011 certificates and are admitted only
+  when the certificate verifies. Nodes here still attach
+  by name the caller already knows — discovery feeds
+  the registry service at Y-053, not this core.
 - The registry service riding these topics is Y-053,
   heartbeats and liveness Y-054, epidemic gossip of registry
   and health state Y-055, and the CRDT stores of ADR-003

@@ -60,8 +60,8 @@ fails verification is a failed delivery, named as such,
 never quietly carried. The keys themselves are Y-011's
 — this module holds no key material and mints no trust;
 TLS carriage of these channels is built at Y-051
-(``yggdrasil.tls_channels``), discovery
-Y-052, the registry service that rides these topics
+(``yggdrasil.tls_channels``), discovery at
+Y-052 (``yggdrasil.discovery``), the registry service that rides these topics
 Y-053, heartbeats Y-054, epidemic state gossip Y-055.
 
 Honesty: this is an in-process model of the transport —
