@@ -137,6 +137,61 @@ model loader is Y-027's SIMULATED loader — residency is
 bookkeeping; no weights move and no live Aesir service is
 claimed.
 
+## The live run on purplelongship
+
+Run on 2026-10-31 (~04:05–04:20 EDT) against the pushed
+commits (`575ba8a`, then the census fix `bdaf41c`), cloned
+from `origin/yrsa/growing-the-tree` into a scratch
+directory on purplelongship — scratch only: nothing was
+installed, no service was enabled, and the run's identity,
+store, and keys lived under `/tmp` and die with it.
+
+**The citizen run itself** (system census probes plus the
+vendor tool's VRAM reading supplied as the vram probe —
+deployment wiring, exactly as the gate demands; nothing
+else injected, `simulated: false`): the factory evaluated
+purplelongship **ready**, every gating check passing. The
+live census read x86_64, 16 threads, "AMD Ryzen 9 4900HS
+with Radeon Graphics", 38.591 GiB RAM, thermal 47.0 °C at
+that moment, VRAM 6.0 GiB (nvidia-smi: 6144 MiB), and the
+accelerator `[{"kind": "cuda", "name": "NVIDIA GeForce RTX
+2060 with Max-Q Design", "proven": false}]` — detection
+measured, proof not claimed. The reserve computed
+7.718 GiB. The neighbour observation, measured live by the
+runner (desktop process / device-node reads, handed in as
+data): the user's desktop session **active**, the NVIDIA
+device **present** — every neighbour's `action_taken`
+remained `none`. `hailo_claim` is `absent` and the Aesir
+grade is `absent`: no Aesir service was active on the
+laptop and none was fed into the census, so the citizen
+claims no Aesir capability — the grade road is proven
+in-tree through the real adapter, and the service joins
+through the seam when deployment wires it. The built
+citizen then started on its freshly provisioned
+laptop-class identity, joined, loaded the hash-pinned
+fixture model, served a queued task end to end
+(`completed`, text "live laptop citizen answer"), answered
+a heartbeat `present`, and closed with **0 failure
+incidents**.
+
+**One defect found by the live run, fixed in the same
+slice** (commit `bdaf41c`): the first live census answered
+`cpu.model: "96"` — Y-022's probe took the first cpuinfo
+line starting with `model`, which on AMD is the stepping
+line (`model: 96`) that precedes `model name`. The probe
+now searches `model name` first (fallbacks kept), with a
+regression test shaped from the real AMD cpuinfo; the
+re-run above, on the fixed code, reads the full processor
+name on the real machine.
+
+**The tests on the laptop**: the citizen's own tests plus
+the census tests ran on purplelongship itself (x86_64,
+Python 3.14.4, pytest 9.0.2) against the fixed commit —
+**30 passed** in 4.61 s. (The runner itself had to live
+outside `/tmp`'s top level: a stray `/tmp/bisect.py` on the
+laptop — the user's own file, left untouched — shadows the
+stdlib module for scripts run from that directory.)
+
 ## Not built / not claimed here
 
 - No systemd service is installed on purplelongship by
