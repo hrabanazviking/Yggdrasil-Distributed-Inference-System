@@ -75,12 +75,25 @@ created ──start──▶ started ──join──▶ joined ──drain─�
   (`begin_task`/`end_task`): the lifecycle gate that execution
   (Y-029) and the queue (Y-031) will sit behind. A draining node
   takes no new leases; duplicate and unknown leases are refused.
-- **drain** — from `started` or `joined`; the node sheds: no new
+- **drain** — from `started`, `joined`, or `paused`; the node sheds: no new
   leases, health names the governor shedding.
-- **stop** — from `started`, `joined`, or `draining`; refused
+- **pause / resume** (Y-042) — `joined → paused → joined`: the
+  operator's brake that is not a goodbye. A paused node stays
+  present — identity, models, queue, and in-flight leases all
+  kept, and held leases may finish — but takes nothing new;
+  health names the pause (`reason: "paused"`) the way it names
+  a drain. The operator's ledger for these verbs is
+  OPERATOR_TOOLS.md.
+- **stop** — from `started`, `joined`, `paused`, or `draining`; refused
   while leases are in flight, so a node finishes or hands off
   its work before it leaves — it never vanishes mid-task by
   accident.
+- **retire** (Y-042) — from any live state (or `stopped`) once
+  no lease is in flight, to the terminal state `retired`: a
+  retired agent cannot be restarted by `start()` — a node that
+  is wanted again is re-provisioned as a new agent, so the old
+  one's book is never silently rewritten. `status()` records
+  `retired_at`.
 
 Illegal moves raise `NodeAgentError` naming the current state
 and the states the verb is allowed from.
@@ -88,9 +101,9 @@ and the states the verb is allowed from.
 ## Health and status
 
 `health()` answers the Y-006 `HealthReport` shape from lifecycle
-truth: `present` while started/joined/draining, `gone`
+truth: `present` while started/joined/paused/draining, `gone`
 otherwise; `governor: {shedding: true, reason: "draining"}`
-while draining. When a resource governor is wired (Y-028),
+while draining, `reason: "paused"` while paused (Y-042). When a resource governor is wired (Y-028),
 the same field carries its verdict instead — its reasons, or
 `within_ceilings`, with `draining` combined in front when
 both bite — and `status()` carries its last evaluated state. It deliberately claims nothing early —

@@ -24,7 +24,14 @@ every later Part II slice hangs its machinery on:
   yet; later slices add their knobs to this schema, versioned.
 - **lifecycle:** ``created → started → joined → draining →
   stopped``, with restart from ``stopped`` allowed (identity is
-  re-verified on every start). Illegal moves are refused by name.
+  re-verified on every start). Y-042's operator verbs grow two
+  more states onto the same ledger: ``paused`` (joined →
+  paused → joined: present, holding its identity, models, and
+  queue, finishing in-flight leases, taking nothing new) and
+  ``retired`` (terminal: from any live state once no lease is
+  in flight; a retired agent is never restarted — it is
+  re-provisioned as a new agent if wanted again). Illegal
+  moves are refused by name.
   A joined node may hold task *leases* (``begin_task`` /
   ``end_task``) — the lifecycle gate only: a draining node takes
   no new leases, and ``stop()`` refuses while leases are in
@@ -253,10 +260,12 @@ TRANSPORT = "local-only"  # the fabric that would carry a join is Part III
 CREATED = "created"
 STARTED = "started"
 JOINED = "joined"
+PAUSED = "paused"
 DRAINING = "draining"
 STOPPED = "stopped"
-LIFECYCLE_STATES = (CREATED, STARTED, JOINED, DRAINING, STOPPED)
-_PRESENT_STATES = (STARTED, JOINED, DRAINING)
+RETIRED = "retired"
+LIFECYCLE_STATES = (CREATED, STARTED, JOINED, PAUSED, DRAINING, STOPPED, RETIRED)
+_PRESENT_STATES = (STARTED, JOINED, PAUSED, DRAINING)
 
 
 def _load_schema(name: str) -> dict:
@@ -476,6 +485,7 @@ class NodeAgent:
         self._seq = 0
         self._started_at: datetime | None = None
         self._joined_at: datetime | None = None
+        self._retired_at: datetime | None = None
         self._sink = LocalJsonlSink(config.log_file) if config.log_file else None
 
     # -- facts --------------------------------------------------------
@@ -682,7 +692,7 @@ class NodeAgent:
         False when it is not held."""
         if self._local_queue is None:
             raise NodeAgentError("this agent has no local queue wired")
-        self._require("cancel_queued_task", JOINED, DRAINING)
+        self._require("cancel_queued_task", JOINED, PAUSED, DRAINING)
         return self._local_queue.cancel(task_id)
 
     def next_queued_task(self) -> dict | None:
@@ -1148,17 +1158,18 @@ class NodeAgent:
         return task_id
 
     def end_task(self, task_id: str) -> None:
-        """Release a task lease (joined or draining — a draining
-        node is finishing exactly this work)."""
-        self._require("end_task", JOINED, DRAINING)
+        """Release a task lease (joined, paused, or draining —
+        a paused or draining node is finishing exactly this
+        work)."""
+        self._require("end_task", JOINED, PAUSED, DRAINING)
         if task_id not in self._in_flight:
             raise NodeAgentError(f"task {task_id} is not in flight on this node")
         self._in_flight.discard(task_id)
 
     def drain(self) -> dict:
-        """started/joined → draining: no new leases; health
-        reports the governor shedding."""
-        self._require("drain", STARTED, JOINED)
+        """started/joined/paused → draining: no new leases;
+        health reports the governor shedding."""
+        self._require("drain", STARTED, JOINED, PAUSED)
         self._state = DRAINING
         self._emit(
             "node.draining",
@@ -1170,11 +1181,69 @@ class NodeAgent:
         )
         return self.status()
 
+    def pause(self) -> dict:
+        """joined → paused (Y-042): the operator's hand on the
+        brake that is not a goodbye. A paused node takes no new
+        leases, gathers no new held work, and stocks nothing
+        new — but it stays present, keeps its identity, models,
+        and queue, and finishes the leases it already holds
+        (``end_task`` stays open). ``resume()`` is the only way
+        back to joined."""
+        self._require("pause", JOINED)
+        self._state = PAUSED
+        self._emit(
+            "node.paused",
+            {
+                "lifecycle_state": PAUSED,
+                "fabric_connected": False,
+                "in_flight": len(self._in_flight),
+            },
+        )
+        return self.status()
+
+    def resume(self) -> dict:
+        """paused → joined (Y-042): the operator lifts the
+        pause; the node takes work again exactly as before it
+        was paused."""
+        self._require("resume", PAUSED)
+        self._state = JOINED
+        self._emit(
+            "node.resumed",
+            {"lifecycle_state": JOINED, "fabric_connected": False},
+        )
+        return self.status()
+
+    def retire(self) -> dict:
+        """started/joined/paused/draining/stopped → retired
+        (Y-042): the node's permanent farewell. Refused while
+        leases are in flight — a node sheds its work (drain,
+        then end the leases) before it retires, exactly as
+        before a stop — and refused from ``created`` (a node
+        that never started has nothing to retire) and from
+        ``retired`` itself. Retirement is terminal for this
+        agent: ``start()`` will not take it back (its allowed
+        origins are created/stopped), so a retired node that
+        is wanted again is re-provisioned and started as a
+        new agent — the old one's book stays as it was."""
+        self._require("retire", STARTED, JOINED, PAUSED, DRAINING, STOPPED)
+        if self._in_flight:
+            raise NodeAgentError(
+                f"retire refused: {len(self._in_flight)} task(s) still in flight "
+                f"on this node — drain and end them before retiring"
+            )
+        self._state = RETIRED
+        self._retired_at = self._now()
+        self._emit(
+            "node.retired",
+            {"lifecycle_state": RETIRED, "fabric_connected": False},
+        )
+        return self.status()
+
     def stop(self) -> dict:
         """started/joined/draining → stopped. Refused while
         leases are in flight: a node sheds its work (drain, then
         end the leases) before it leaves."""
-        self._require("stop", STARTED, JOINED, DRAINING)
+        self._require("stop", STARTED, JOINED, PAUSED, DRAINING)
         if self._in_flight:
             raise NodeAgentError(
                 f"stop refused: {len(self._in_flight)} task(s) still in flight "
@@ -1211,6 +1280,8 @@ class NodeAgent:
         }
         if self._state == DRAINING:
             report["governor"] = {"shedding": True, "reason": "draining"}
+        elif self._state == PAUSED:
+            report["governor"] = {"shedding": True, "reason": "paused"}
         if self._governor is not None:
             try:
                 verdict = self._governor.evaluate()
@@ -1219,6 +1290,8 @@ class NodeAgent:
             reasons = list(verdict["reasons"])
             if self._state == DRAINING and "draining" not in reasons:
                 reasons.insert(0, "draining")
+            if self._state == PAUSED and "paused" not in reasons:
+                reasons.insert(0, "paused")
             report["governor"] = {
                 "shedding": bool(reasons),
                 "reason": ", ".join(reasons) if reasons else "within_ceilings",
@@ -1381,6 +1454,7 @@ class NodeAgent:
             "citizen": self._citizen,
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,
+            "retired_at": _fmt(self._retired_at) if self._retired_at else None,
             "census": (
                 self._census_collector.current
                 if self._census_collector is not None
