@@ -97,12 +97,15 @@ transport's delivery rules, exactly as Y-049 benchmarked them.
   (`docs/REGISTRY_SERVICE.md`) as a replicated service
   in its own right; its registrations riding these
   topics arrive with the real-LAN carriage at Y-062.
-  Heartbeats and liveness are Y-054, epidemic gossip of
-  registry and health state Y-055, and the CRDT stores
-  of ADR-003 Y-056.
-- No node-agent seam: the agent joins the fabric when
-  the heartbeat slice gives it something to say
-  (Y-054). Components use `Fabric` directly until then.
+  Heartbeats and liveness are built at Y-054
+  (`docs/LIVENESS.md`), epidemic gossip of registry
+  and health state is Y-055, and the CRDT stores of
+  ADR-003 Y-056.
+- No fabric seam on the node agent: the agent gained
+  its peers' words at Y-054 as the *liveness* seam
+  (`liveness_tracker=`); it joins the fabric itself
+  when real carriage (Y-062) gives it a wire.
+  Components use `Fabric` directly until then.
 - The real wire — sockets under TLS between machines — is
   carried by Y-051's TLS channels and proven on the real
   LAN at Y-062 and on hardware in Part VIII; the

@@ -113,9 +113,11 @@ now.
 ## Not built here
 
 - Heartbeats and present → suspect → gone liveness
-  ageing are Y-054; discovery expiry (Y-052) is peer
-  table freshness, and this registry holds facts until
-  they are superseded or withdrawn.
+  ageing are built at Y-054 (`docs/LIVENESS.md`);
+  discovery expiry (Y-052) is peer table freshness, a
+  liveness verdict is not a withdrawal, and this
+  registry holds facts until they are superseded or
+  withdrawn.
 - Epidemic gossip of registry and health state is
   Y-055 (this slice's sync is pairwise and called
   directly; gossip is its epidemic carriage), and the
@@ -126,10 +128,11 @@ now.
   (Y-050) over TLS (Y-051) between the peers discovery
   finds (Y-052) — is Y-062 on the real LAN; hardware
   proof is Part VIII's.
-- No node-agent seam: as with the fabric and
-  discovery, the agent gains registry traffic when the
-  heartbeat slice gives it words of its own (Y-054).
-  Components use `RegistryService` directly until then.
+- No registry seam on the node agent: the agent gained
+  its peers' words at Y-054 as the *liveness* seam
+  (`liveness_tracker=`); registry traffic stays a
+  component's own act (`RegistryService` used directly)
+  until real carriage at Y-062 gives it a wire.
 - Registration is a node's word about itself, gated by
   census agreement and sequence — message-level
   signing of registrations is Y-059's road, and

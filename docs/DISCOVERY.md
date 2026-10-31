@@ -94,12 +94,14 @@ slots behind the same `DiscoveryService` shape.
   (`docs/REGISTRY_SERVICE.md`): nodes register census +
   models at any replica, and every replica holds the
   whole truth; heartbeats and present → suspect → gone
-  liveness ageing are Y-054 (discovery expiry is
-  *table* freshness, not the liveness verdict).
-- No node-agent seam: as with the fabric (Y-050), the
-  agent joins discovery when the heartbeat slice gives
-  it traffic of its own (Y-054). Components use
-  `DiscoveryService` directly until then.
+  liveness ageing are built at Y-054
+  (`docs/LIVENESS.md`) — discovery expiry is *table*
+  freshness, not the liveness verdict.
+- No discovery seam on the node agent: as with the
+  fabric (Y-050), the agent gained its peers' words at
+  Y-054 as the *liveness* seam (`liveness_tracker=`).
+  Components use `DiscoveryService` directly until
+  real carriage at Y-062.
 - Certificate revocation is still not built (Y-011's
   named residual): an expired certificate is refused,
   a revoked-but-in-window one is not yet detectable.

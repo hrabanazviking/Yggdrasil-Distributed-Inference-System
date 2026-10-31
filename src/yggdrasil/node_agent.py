@@ -209,6 +209,15 @@ every later Part II slice hangs its machinery on:
   it, and ``status()`` carries its validated report. Without
   one wired, the agent accounts nothing across engines,
   exactly as before.
+- **liveness tracker (Y-054, grown onto the skeleton):** a
+  ``liveness_tracker=`` handed in at construction is this
+  node's judge of its *peers*: heartbeats it hears
+  (``observe_peer_heartbeat``) are aged present → suspect →
+  gone against the tracker's policy lines on this node's
+  own clock (``yggdrasil.liveness``). ``peer_liveness`` /
+  ``sweep_liveness`` read the verdicts back and
+  ``status()`` carries its validated report. Without one
+  wired, the agent judges no peer, exactly as before.
 - **observability:** every lifecycle move is recorded as a
   Y-013 EventEnvelope from the ``node_agent`` component (the
   first real emitter in the tree), and written to the config's
@@ -254,6 +263,7 @@ from yggdrasil.identity import (
     verify_certificate,
 )
 from yggdrasil.idle_generosity import GenerosityError
+from yggdrasil.liveness import LivenessError
 from yggdrasil.local_queue import QueueError
 from yggdrasil.model_fetch import ModelFetchError
 from yggdrasil.model_lifecycle import ModelLifecycleError
@@ -417,6 +427,7 @@ class NodeAgent:
         task_guard=None,
         power_telemetry=None,
         multi_engine=None,
+        liveness_tracker=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -510,6 +521,12 @@ class NodeAgent:
         # report. The host's lifecycle is the deployment's to
         # keep the same object as model_lifecycle=.
         self._multi_engine = multi_engine
+        # The liveness tracker (Y-054): this node's ageing
+        # verdicts on its peers — present, suspect, gone —
+        # judged from the heartbeats it hears, on its own
+        # clock. When wired, peer heartbeats delegate to it
+        # and status() carries its report.
+        self._liveness_tracker = liveness_tracker
         self._health_endpoint: NodeHealthEndpoint | None = None
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
@@ -745,6 +762,47 @@ class NodeAgent:
         """The host's multi-engine report (Y-045), or None when
         no host is wired — accounting nothing across engines."""
         return self._multi_engine.report() if self._multi_engine is not None else None
+
+    # -- liveness of peers (Y-054) ----------------------------------------
+
+    @property
+    def liveness_tracker(self):
+        """The wired liveness tracker (Y-054), or None when
+        the agent was built without one."""
+        return self._liveness_tracker
+
+    def observe_peer_heartbeat(self, beat: dict) -> dict | None:
+        """Hear one peer's heartbeat (Y-054): the tracker
+        accepts it under its sequence-freshness rules or
+        refuses it by name, and answers the peer's liveness
+        record as it now stands."""
+        if self._liveness_tracker is None:
+            raise NodeAgentError("this agent has no liveness tracker wired")
+        try:
+            return self._liveness_tracker.observe(beat)
+        except LivenessError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def peer_liveness(self, node_id: str) -> dict | None:
+        """One peer's liveness verdict (Y-054) as it stands
+        now, or None — when no tracker is wired, and when the
+        tracker has never heard the peer: judging nothing is
+        an honest answer."""
+        if self._liveness_tracker is None:
+            return None
+        return self._liveness_tracker.liveness(node_id)
+
+    def sweep_liveness(self) -> list[dict]:
+        """Age every tracked peer (Y-054), recording verdict
+        transitions, and answer every peer's record."""
+        if self._liveness_tracker is None:
+            raise NodeAgentError("this agent has no liveness tracker wired")
+        return self._liveness_tracker.sweep()
+
+    def liveness_report(self) -> dict | None:
+        """The tracker's liveness report (Y-054), or None
+        when no tracker is wired — judging no peer."""
+        return self._liveness_tracker.report() if self._liveness_tracker is not None else None
 
     # -- task execution (Y-029) -----------------------------------------
 
@@ -1609,6 +1667,7 @@ class NodeAgent:
             "task_security": self.task_security_report(),
             "power_telemetry": self.power_telemetry_report(),
             "multi_engine": self.multi_engine_report(),
+            "liveness": self.liveness_report(),
             "citizen": self._citizen,
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,

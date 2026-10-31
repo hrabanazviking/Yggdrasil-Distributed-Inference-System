@@ -99,8 +99,9 @@ with its stated not-constant-time limit.
   verifies. Channels here are still opened to peers the
   caller names, over sockets the caller already holds.
 - Wiring the node agent to open TLS channels itself
-  arrives with the registry and heartbeat slices that
-  give it fabric traffic of its own (Y-053/Y-054).
+  arrives with real carriage at Y-062; the registry
+  (Y-053) and heartbeat/liveness (Y-054) slices gave
+  it the records those channels will carry.
 - Message-level signing of every fabric message is
   Y-059 (the seam is Y-050's); TLS here authenticates
   the *channel* and both its ends.
