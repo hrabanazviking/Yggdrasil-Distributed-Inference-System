@@ -120,6 +120,15 @@ every later Part II slice hangs its machinery on:
   ``status()`` carries its validated failure report. Without
   one wired, the agent reports failures exactly as before:
   under their Y-007 names, unsorted.
+- **citizen report (Y-033, grown onto the skeleton):** a
+  ``citizen=`` handed in at construction is the node's
+  validated citizen report (the Pi citizen's, from
+  ``yggdrasil.pi_citizen`` — the device-class evaluation its
+  factory ran before wiring this agent). The agent does not
+  evaluate citizens itself; it carries the report in
+  ``status()`` under ``citizen`` so the operator's door can
+  read which citizen this node is and on what measured facts.
+  Without one, ``status()`` carries ``citizen: None``.
 - **observability:** every lifecycle move is recorded as a
   Y-013 EventEnvelope from the ``node_agent`` component (the
   first real emitter in the tree), and written to the config's
@@ -309,6 +318,7 @@ class NodeAgent:
         sandbox=None,
         local_queue=None,
         failure_monitor=None,
+        citizen=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -352,6 +362,10 @@ class NodeAgent:
         # wired, execute_task feeds it every sandbox report and
         # check_failures polls through it.
         self._failure_monitor = failure_monitor
+        # The citizen report (Y-033): the device-class citizen
+        # evaluation this agent was built under, carried into
+        # status() verbatim. The agent evaluates nothing itself.
+        self._citizen = citizen
         self._health_endpoint: NodeHealthEndpoint | None = None
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
@@ -427,6 +441,12 @@ class NodeAgent:
         """The node's failure monitor (Y-032), or None when the
         agent was built without one."""
         return self._failure_monitor
+
+    @property
+    def citizen_report(self) -> dict | None:
+        """The citizen report this agent was built under
+        (Y-033), or None when no citizen factory built it."""
+        return self._citizen
 
     # -- failure shapes (Y-032) -------------------------------------------
 
@@ -994,6 +1014,7 @@ class NodeAgent:
             ),
             "queue": self.queue_report(),
             "failures": self.failure_report(),
+            "citizen": self._citizen,
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,
             "census": (

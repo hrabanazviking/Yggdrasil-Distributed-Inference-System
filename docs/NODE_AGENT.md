@@ -165,7 +165,10 @@ failure shapes have landed (Y-032 — an agent built with
 `failure_monitor=` sorts engine crash / OOM / thermal
 throttle / model corrupt distinctly, contains each, and
 carries the failure report in `status()`; see
-FAILURE_SHAPES.md); no fabric
-join (Part III), and no real hardware citizen
-(Y-033 – Y-035). The skeleton has run in tests on this VM only;
+FAILURE_SHAPES.md); and the Pi citizen has landed (Y-033 —
+an agent built by its factory carries the validated citizen
+report in `status()` under `citizen`, and one built without
+a citizen carries `citizen: None`; see PI_CITIZEN.md); no fabric
+join (Part III), and the laptop and VM citizens are still
+to come (Y-034 – Y-035). The skeleton has run in tests on this VM only;
 nothing here is a hardware claim.
