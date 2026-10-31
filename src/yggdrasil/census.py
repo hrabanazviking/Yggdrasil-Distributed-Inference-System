@@ -160,12 +160,20 @@ def _system_cpu(root: Path) -> dict:
     cpu: dict = {"arch": platform.machine() or "unknown", "cores": os.cpu_count() or 1}
     cpuinfo = _read_text(root / "proc" / "cpuinfo")
     if cpuinfo:
-        for line in cpuinfo.splitlines():
-            if line.lower().startswith(("model name", "model\t", "hardware")):
-                model = line.partition(":")[2].strip()
-                if model:
-                    cpu["model"] = model
-                break
+        # "model name" wins wherever it appears: on AMD x86 the
+        # bare "model\t: <stepping number>" line comes FIRST in
+        # cpuinfo (purplelongship's Ryzen reads "model: 96"
+        # before its name — a live Y-034 reading caught the
+        # probe answering "96" for the model), so the name line
+        # is searched before the fallbacks are allowed to speak.
+        lines = cpuinfo.splitlines()
+        for prefix in ("model name", "hardware", "model\t"):
+            for line in lines:
+                if line.lower().startswith(prefix):
+                    model = line.partition(":")[2].strip()
+                    if model:
+                        cpu["model"] = model
+                        return cpu
     return cpu
 
 

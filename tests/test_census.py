@@ -105,6 +105,25 @@ def test_a_fake_root_is_measured_exactly(tmp_path):
     ]
 
 
+def test_cpuinfo_model_name_wins_over_the_amd_stepping_line(tmp_path):
+    # Regression (found live by Y-034 on purplelongship): AMD
+    # cpuinfo carries "model\t: 96" (the stepping) BEFORE
+    # "model name\t: AMD Ryzen ..." — the probe must answer
+    # the name, never the stepping number.
+    root = tmp_path / "amd-machine"
+    (root / "proc").mkdir(parents=True)
+    (root / "proc" / "meminfo").write_text("MemTotal:        40465868 kB\n")
+    (root / "proc" / "cpuinfo").write_text(
+        "vendor_id\t: AuthenticAMD\n"
+        "cpu family\t: 23\n"
+        "model\t\t: 96\n"
+        "model name\t: AMD Ryzen 9 4900HS with Radeon Graphics\n"
+    )
+    (root / "dev").mkdir()
+    census = measure_census(NODE_ID, probes=system_probe_set(root), at=FIXED)
+    assert census["cpu"]["model"] == "AMD Ryzen 9 4900HS with Radeon Graphics"
+
+
 def test_an_injected_probe_set_is_measured_exactly():
     census = measure_census(NODE_ID, probes=static_probes(), at=FIXED)
     assert census == {
