@@ -86,9 +86,11 @@ both stay empty, exactly as before.
 
 ## Not built here
 
-No resource governor (Y-028 — heat and ceilings shed load
-there, not here), no task sandbox (Y-029 — acquires here are
-the lease shape it will hold), no routing (Part IV reads the
+No task sandbox (Y-029 — acquires here are the lease shape
+it will hold); the resource governor has landed (Y-028 — it
+only ever *recommends* resident shedding at its hard thermal
+line; unloading remains this manager's act, under its own
+in-use protections), no routing (Part IV reads the
 facts; nothing here places a task), and no hardware claim:
 the suite's loader is SIMULATED and its model files are the
 store's SIMULATED fixtures — residency and swap-cost

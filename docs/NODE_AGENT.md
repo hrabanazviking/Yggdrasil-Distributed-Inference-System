@@ -88,7 +88,10 @@ and the states the verb is allowed from.
 `health()` answers the Y-006 `HealthReport` shape from lifecycle
 truth: `present` while started/joined/draining, `gone`
 otherwise; `governor: {shedding: true, reason: "draining"}`
-while draining. It deliberately claims nothing early —
+while draining. When a resource governor is wired (Y-028),
+the same field carries its verdict instead — its reasons, or
+`within_ceilings`, with `draining` combined in front when
+both bite — and `status()` carries its last evaluated state. It deliberately claims nothing early —
 `models_loaded` comes from the model lifecycle (Y-027) when
 one is wired and is empty until then,
 `queue_depth` is 0 until the local queue exists (Y-031), and
@@ -133,8 +136,11 @@ The model store has landed (Y-026 — an agent built with
 `model_store=` lists only hash-verified models in its census),
 and the model lifecycle has landed (Y-027 — an agent built
 with `model_lifecycle=` loads and unloads store-verified
-models into budgeted slots and reports them in `health()`);
-no governor beyond drain's shedding flag (Y-028), no
+models into budgeted slots and reports them in `health()`),
+and the resource governor has landed (Y-028 — an agent built
+with `governor=` refuses new task leases over its heat,
+memory, or CPU ceilings and reports the verdict in
+`health()`/`status()`); no
 task execution (Y-029), no heartbeat endpoint (Y-030), no queue
 (Y-031), no fabric join (Part III), and no real hardware citizen
 (Y-033 – Y-035). The skeleton has run in tests on this VM only;

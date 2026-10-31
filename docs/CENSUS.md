@@ -111,9 +111,9 @@ for operator-declared models — all reporting their own
 reachability into the census through the collector's
 callable seams), model presence with hash proof (the model
 store, Y-026 — an agent built with a store lists exactly its
-hash-verified models, re-hashed on every census), no governor acting on these numbers
-(Y-028 — the governor's thermal decisions cite this telemetry
-at Y-044), no fabric carrying the census to peers (Part III;
+hash-verified models, re-hashed on every census), the resource governor has now landed too
+(Y-028 — it reads readings in this telemetry's shape and its
+thermal decisions cite this telemetry at Y-044), no fabric carrying the census to peers (Part III;
 the registry service, Y-053, is where censuses travel), and no
 hardware citizen proof: a census measured on this VM is a fact
 about this VM. The Pi, laptop, and VM citizens are measured on

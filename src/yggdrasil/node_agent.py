@@ -60,6 +60,17 @@ every later Part II slice hangs its machinery on:
   ``health()`` then reports its resident models as
   ``models_loaded`` — until one is wired, that list stays
   empty, as before: the report claims nothing early.
+- **resource governor (Y-028, grown onto the skeleton):** a
+  ``governor=`` handed in at construction holds the node's
+  ceilings (thermal with hysteresis, memory fraction, CPU
+  share). ``begin_task`` asks it before taking a lease — a
+  node over a ceiling refuses new work gracefully, by name,
+  and takes nothing; work already in flight is never touched.
+  ``health()`` reports its verdict in the ``governor`` field
+  (its reasons, or ``draining`` while draining, combined when
+  both bite), and ``status()`` carries its last evaluated
+  state. Without one wired, health keeps only drain's flag,
+  exactly as before.
 - **observability:** every lifecycle move is recorded as a
   Y-013 EventEnvelope from the ``node_agent`` component (the
   first real emitter in the tree), and written to the config's
@@ -91,6 +102,7 @@ from referencing import Registry, Resource
 
 from yggdrasil import __version__
 from yggdrasil.census import CensusCollector
+from yggdrasil.governor import GovernorError
 from yggdrasil.identity import (
     ROOT_NODE_ID,
     IdentityError,
@@ -240,6 +252,7 @@ class NodeAgent:
         census_models=None,
         model_store=None,
         model_lifecycle=None,
+        governor=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -265,6 +278,10 @@ class NodeAgent:
         # memory budgets, with measured swap costs. When wired,
         # health() reports its resident models.
         self._model_lifecycle = model_lifecycle
+        # The resource governor (Y-028): ceilings on heat,
+        # memory, and CPU share. When wired, begin_task asks
+        # its permission first, and health() reports its verdict.
+        self._governor = governor
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
         self._identity: dict | None = None
@@ -315,6 +332,12 @@ class NodeAgent:
         """The node's model lifecycle manager (Y-027), or None
         when the agent was built without one."""
         return self._model_lifecycle
+
+    @property
+    def governor(self):
+        """The node's resource governor (Y-028), or None when
+        the agent was built without one."""
+        return self._governor
 
     # -- model lifecycle (Y-027) ------------------------------------------
 
@@ -474,14 +497,32 @@ class NodeAgent:
         )
         return self.status()
 
-    def begin_task(self, task_id: str) -> str:
+    def begin_task(self, task_id: str, *, memory_bytes: int = 0, cpu_share: float = 0.0) -> str:
         """Take a task lease. Only a joined node takes work;
-        execution behind the lease is Y-029."""
+        execution behind the lease is Y-029. When a resource
+        governor (Y-028) is wired, it is asked first: a node
+        over its heat, memory, or CPU ceiling refuses the new
+        lease gracefully — by name, with the governor's
+        reasons — and takes nothing."""
         self._require("begin_task", JOINED)
         if not isinstance(task_id, str) or not task_id:
             raise NodeAgentError("a task lease needs a task_id")
         if task_id in self._in_flight:
             raise NodeAgentError(f"task {task_id} is already in flight on this node")
+        if self._governor is not None:
+            try:
+                decision = self._governor.admit(
+                    task_id=task_id, memory_bytes=memory_bytes, cpu_share=cpu_share
+                )
+            except GovernorError as exc:
+                raise NodeAgentError(str(exc)) from exc
+            if not decision["admitted"]:
+                raise NodeAgentError(
+                    f"governor refused task {task_id}: "
+                    f"{', '.join(decision['reasons'])} "
+                    f"(projected memory fraction {decision['projected_memory_fraction']}, "
+                    f"projected cpu share {decision['projected_cpu_share']})"
+                )
         self._in_flight.add(task_id)
         return task_id
 
@@ -548,6 +589,18 @@ class NodeAgent:
         }
         if self._state == DRAINING:
             report["governor"] = {"shedding": True, "reason": "draining"}
+        if self._governor is not None:
+            try:
+                verdict = self._governor.evaluate()
+            except GovernorError as exc:
+                raise NodeAgentError(str(exc)) from exc
+            reasons = list(verdict["reasons"])
+            if self._state == DRAINING and "draining" not in reasons:
+                reasons.insert(0, "draining")
+            report["governor"] = {
+                "shedding": bool(reasons),
+                "reason": ", ".join(reasons) if reasons else "within_ceilings",
+            }
         return _validate(_HEALTH_VALIDATOR, report, "health report")
 
     def status(self) -> dict:
@@ -567,6 +620,7 @@ class NodeAgent:
                 if self._model_lifecycle is not None
                 else []
             ),
+            "governor": self._governor.last_state if self._governor is not None else None,
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,
             "census": (
