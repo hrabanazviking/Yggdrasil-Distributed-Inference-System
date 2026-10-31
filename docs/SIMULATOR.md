@@ -55,9 +55,11 @@ module):
 
 ## How later parts use it
 
-- Y-015 plugs its fake engines (echo, latency-shaped,
-  failure-shaped) in as node handlers — the injection point this
-  slice provides — replacing the plain default echo.
+- Y-015's fake engines (echo, latency-shaped, failure-shaped —
+  `docs/FAKE_ENGINES.md`) plug in as node handlers, replacing the
+  plain default echo; a handler offering `latency_ms_for(task)`
+  sets each run's simulated latency in place of the node's
+  constant.
 - Part III tests fabric behaviour by comparing it against this
   tunnel's registry/discovery shapes; Part IV replaces the
   stand-in placement with real routing and grades it here first;
@@ -71,8 +73,10 @@ module):
   means "not in this process's registry", nothing more. The real
   fabric is Part III.
 - No resource model: queue depth is reported as 0, latency is a
-  declared constant per node, and no memory, thermal, or load
-  behaviour is simulated. Governors are Part II; load shapes are
-  later wind-tunnel work (Y-063, Y-072).
+  declared constant per node (or a declared per-task formula
+  when a Y-015 fake engine handles the task), and no memory,
+  thermal, or load behaviour is simulated. Governors are
+  Part II; load shapes are later wind-tunnel work (Y-063,
+  Y-072).
 - Nothing in this slice has run on hardware, and no simulator
   result may be cited as evidence about a real device.

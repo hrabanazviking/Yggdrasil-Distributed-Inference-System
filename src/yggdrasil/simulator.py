@@ -200,8 +200,9 @@ def make_fake_census(
 def _echo_handler(task: dict, node: "SimulatedNode") -> dict:
     """The tunnel's default handler: a plain SIMULATED echo.
 
-    Detailed fake engines are Y-015; this exists so a task can
-    travel end to end before they land."""
+    The detailed fake engines (Y-015, ``yggdrasil.fake_engines``)
+    plug in as handlers in this one's place; this exists so a
+    task can travel end to end with no engine named at all."""
     prompt = task["payload"].get("prompt", "")
     return {"text": f"SIMULATED echo: {prompt}", "simulated": True}
 
@@ -443,7 +444,15 @@ class Simulator:
             return self.results[-1], stream
 
         stream.append(self._stream(task["id"], 1, "started"))
-        self.clock.advance(node.latency_ms)
+        # A handler may shape latency per task (Y-015's fake
+        # engines offer latency_ms_for); otherwise the node's
+        # declared constant governs. Either way the value is
+        # simulated — it advances the virtual clock only.
+        latency_for = getattr(node.handler, "latency_ms_for", None)
+        run_ms = float(latency_for(task)) if callable(latency_for) else node.latency_ms
+        if run_ms < 0:
+            raise SimulatorError("simulated latency cannot be negative")
+        self.clock.advance(run_ms)
         node.tasks_run += 1
         try:
             outcome = node.handler(task, node)
@@ -452,7 +461,7 @@ class Simulator:
                 "task_id": task["id"],
                 "status": "failed",
                 "provenance": provenance,
-                "timings_ms": {"queue": 0.0, "run": node.latency_ms, "total": node.latency_ms},
+                "timings_ms": {"queue": 0.0, "run": run_ms, "total": run_ms},
                 "error": {"code": failure.error_code, "detail": failure.detail},
                 "result": {"simulated": True},
             }
@@ -471,7 +480,7 @@ class Simulator:
             "task_id": task["id"],
             "status": "completed",
             "provenance": provenance,
-            "timings_ms": {"queue": 0.0, "run": node.latency_ms, "total": node.latency_ms},
+            "timings_ms": {"queue": 0.0, "run": run_ms, "total": run_ms},
             "result": outcome,
         }
         stream.append(self._stream(task["id"], 2, "completed"))
