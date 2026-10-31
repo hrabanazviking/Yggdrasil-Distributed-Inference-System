@@ -210,6 +210,12 @@ stdlib module for scripts run from that directory.)
   lifecycle — an unfit quant is refused at load, by name,
   before the loader is asked (see QUANT_FITNESS.md).
 
+- The node journal (Y-039) is wired by this factory: the
+  agent carries a `node_journal=` over its runs — in-memory
+  by default, or the durable JSONL file when the factory is
+  handed `journal_path=` — and `status()` carries its
+  report under `journal` (see NODE_JOURNAL.md).
+
 - No systemd service is installed on purplelongship by
   this slice: enabling `deploy/yggdrasil-node.service`
   there stays the operator's act, with identity

@@ -149,6 +149,18 @@ every later Part II slice hangs its machinery on:
   question for any registry entry against this node's
   measured census. ``status()`` carries the judge's summary.
   Without one wired, the agent judges nothing, as before.
+- **node journal (Y-039, grown onto the skeleton):** a
+  ``node_journal=`` handed in at construction is the node's
+  book of tasks it ran (``yggdrasil.node_journal``).
+  ``execute_task`` journals every finished sandbox run —
+  completed, failed, cancelled, expired alike — after the
+  failure monitor has sorted it, from the run's own task,
+  result, and sandbox report; a run refused before it starts
+  (the governor, a non-resident model) never reaches the
+  sandbox and is not journaled. ``journal_entries()`` /
+  ``journal_report()`` read the book back and ``status()``
+  carries the report. Without one wired, the agent keeps no
+  book, exactly as before.
 - **observability:** every lifecycle move is recorded as a
   Y-013 EventEnvelope from the ``node_agent`` component (the
   first real emitter in the tree), and written to the config's
@@ -195,6 +207,7 @@ from yggdrasil.identity import (
 from yggdrasil.local_queue import QueueError
 from yggdrasil.model_fetch import ModelFetchError
 from yggdrasil.model_lifecycle import ModelLifecycleError
+from yggdrasil.node_journal import JournalError
 from yggdrasil.observability import LocalJsonlSink, make_event
 from yggdrasil.quant_fitness import QuantFitnessError
 from yggdrasil.sandbox import SandboxError
@@ -343,6 +356,7 @@ class NodeAgent:
         citizen=None,
         model_fetcher=None,
         quant_fitness=None,
+        node_journal=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -401,6 +415,11 @@ class NodeAgent:
         # factories, so load-time enforcement and this agent's
         # pre-flight answers cannot disagree.
         self._quant_fitness = quant_fitness
+        # The node journal (Y-039): the book of tasks this node
+        # ran — engine, model, timings, outcome per run. When
+        # wired, execute_task journals every finished run and
+        # status() carries its report.
+        self._node_journal = node_journal
         self._health_endpoint: NodeHealthEndpoint | None = None
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
@@ -495,6 +514,12 @@ class NodeAgent:
         the agent was built without one."""
         return self._quant_fitness
 
+    @property
+    def node_journal(self):
+        """The node's journal (Y-039), or None when the agent
+        was built without one."""
+        return self._node_journal
+
     # -- failure shapes (Y-032) -------------------------------------------
 
     def check_failures(self, readings: dict | None = None) -> dict:
@@ -567,6 +592,14 @@ class NodeAgent:
                         outcome[2], engine=engine, model=model
                     )
                 except FailureError as exc:
+                    raise NodeAgentError(str(exc)) from exc
+            if self._node_journal is not None:
+                # Y-039: the finished run enters the node's book
+                # — every outcome alike, from the run's own
+                # records (task, result, sandbox report).
+                try:
+                    self._node_journal.record_run(task, outcome[0], outcome[2])
+                except JournalError as exc:
                     raise NodeAgentError(str(exc)) from exc
             return outcome
         finally:
@@ -690,6 +723,20 @@ class NodeAgent:
         """The fitness judge's summary (Y-038), or None when no
         judge is wired — judging nothing, claiming nothing."""
         return self._quant_fitness.summary() if self._quant_fitness is not None else None
+
+    # -- node journal (Y-039) ---------------------------------------------
+
+    def journal_entries(self) -> list[dict]:
+        """Every journal entry (Y-039): the tasks this node
+        ran, in the order they finished. An unwired agent
+        keeps no book and answers an empty list."""
+        return self._node_journal.entries() if self._node_journal is not None else []
+
+    def journal_report(self) -> dict | None:
+        """The journal's report (Y-039), or None when no
+        journal is wired — recording nothing, claiming
+        nothing."""
+        return self._node_journal.report() if self._node_journal is not None else None
 
     # -- model lifecycle (Y-027) ------------------------------------------
 
@@ -1104,6 +1151,7 @@ class NodeAgent:
             "failures": self.failure_report(),
             "model_fetch": self.fetch_report(),
             "quant_fitness": self.quant_fitness_summary(),
+            "journal": self.journal_report(),
             "citizen": self._citizen,
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,

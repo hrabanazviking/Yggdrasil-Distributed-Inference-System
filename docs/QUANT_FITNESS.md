@@ -112,8 +112,11 @@ No per-engine quant support tables (an engine that cannot
 serve a format it discovered is an adapter honesty question,
 Y-023–Y-025, unchanged); no fitness *measurement* (a quant
 that fits but runs unusably slowly is a measured-speeds
-question for the registry's graded speeds, Part IV); no
-journal (Y-039), no graceful degradation on accelerator
-loss (Y-040 — its census refresh will feed this same judge
-through the callable census seam), and no router
-enforcement (Part IV).
+question for the registry's graded speeds, Part IV); the
+node journal has landed (Y-039 — see NODE_JOURNAL.md; it
+journals runs, it does not judge them, and a load this
+judge refuses before the loader is a refusal, not a run,
+so it is not journaled); no graceful degradation on
+accelerator loss (Y-040 — its census refresh will feed
+this same judge through the callable census seam), and
+no router enforcement (Part IV).

@@ -96,6 +96,7 @@ from yggdrasil.model_fetch import ModelFetcher
 from yggdrasil.model_lifecycle import ModelLifecycle, budgets_from_census
 from yggdrasil.model_store import ModelStore
 from yggdrasil.node_agent import NodeAgent
+from yggdrasil.node_journal import NodeJournal
 from yggdrasil.pi_citizen import hailo_claim_for
 from yggdrasil.quant_fitness import QuantFitness
 from yggdrasil.sandbox import TaskSandbox
@@ -428,6 +429,7 @@ def build_vm_citizen_agent(
     key_store=None,
     fetch_transport=None,
     fetch_policy=None,
+    journal_path=None,
 ) -> tuple[NodeAgent, dict]:
     """The full VM citizen: evaluate first, and refuse a machine
     that does not meet the profile; then wire the whole Part II
@@ -500,6 +502,7 @@ def build_vm_citizen_agent(
         now=now,
         simulated=simulated,
     )
+    journal = NodeJournal(config.node_id, path=journal_path, now=now)
     agent = NodeAgent(
         config,
         key_store=key_store,
@@ -514,6 +517,7 @@ def build_vm_citizen_agent(
         failure_monitor=monitor,
         model_fetcher=fetcher,
         quant_fitness=fitness,
+        node_journal=journal,
         citizen=report,
     )
     return agent, report

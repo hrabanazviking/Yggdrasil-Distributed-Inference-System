@@ -190,6 +190,11 @@ pre-flight verdicts for any registry entry against its
 measured census via `quant_verdicts`, the citizen factories
 wire the same judge into their lifecycle so an unfit quant
 is refused at load, and `status()` carries the judge's
-summary; see QUANT_FITNESS.md); no fabric
+summary; see QUANT_FITNESS.md); and the node journal has
+landed (Y-039 — an agent built with `node_journal=`
+journals every finished `execute_task` run from its own
+records, reads the book back via `journal_entries()` /
+`journal_report()`, and carries the report in `status()`
+under `journal`; see NODE_JOURNAL.md); no fabric
 join (Part III). The skeleton has run in tests on this VM only;
 nothing here is a hardware claim.

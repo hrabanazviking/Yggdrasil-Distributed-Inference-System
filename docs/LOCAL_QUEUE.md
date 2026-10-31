@@ -120,7 +120,10 @@ An agent built with `local_queue=` grows:
 The queue is **in-process memory**: it is not durable —
 a restarted agent holds nothing, and no task is claimed
 held across a restart (the durable record of work done is
-the node journal, Y-039). It is not a mesh queue — no peer
+the node journal, which has landed at Y-039 — see
+NODE_JOURNAL.md; tasks served from this queue through
+`execute_next_queued` are journaled by that path). It is
+not a mesh queue — no peer
 sees or shares this line (fabric carriage is Part III,
 load-aware placement reading these numbers is Part IV).
 No task expires in the queue in this slice: a deadline is

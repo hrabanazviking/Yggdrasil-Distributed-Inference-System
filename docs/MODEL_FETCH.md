@@ -137,4 +137,7 @@ in the store whatever its quant, and the lifecycle's fitness
 gate is what refuses to load an unfit one); no fetching
 *for* another node
 (relay duty is a fabric question, Part III); and the node
-journal (Y-039) does not yet drink from these records.
+journal (Y-039, landed — see NODE_JOURNAL.md) does not
+drink from these records: it journals tasks run, not
+models fetched, and a fetch remains this duty's own
+record and events.
