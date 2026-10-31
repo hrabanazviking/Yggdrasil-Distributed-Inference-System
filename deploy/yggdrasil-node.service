@@ -5,7 +5,12 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 -m yggdrasil.node_agent
+# The operator provisions /etc/yggdrasil/node.json and the key
+# store it names (Y-011 identity, Y-021 config) before enabling
+# this unit. Preflight the same command by hand with --check:
+# it runs start -> join -> health -> drain -> stop once and
+# prints the verified status as JSON.
+ExecStart=/usr/bin/python3 -m yggdrasil.node_agent --config /etc/yggdrasil/node.json
 Restart=on-failure
 RestartSec=5
 
