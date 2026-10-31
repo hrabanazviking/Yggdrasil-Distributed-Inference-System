@@ -112,8 +112,10 @@ reachability into the census through the collector's
 callable seams), model presence with hash proof (the model
 store, Y-026 — an agent built with a store lists exactly its
 hash-verified models, re-hashed on every census), the resource governor has now landed too
-(Y-028 — it reads readings in this telemetry's shape and its
-thermal decisions cite this telemetry at Y-044), graceful
+(Y-028 — it reads readings in this telemetry's shape, and
+power/thermal telemetry has now landed at Y-044: the
+governor's thermal decisions are citable against measured
+zone-and-watt readings; see POWER_TELEMETRY.md), graceful
 degradation has landed (Y-040 — every agent census refresh
 is judged against the node's baseline by its degradation
 tracker, so an accelerator this census stops measuring is

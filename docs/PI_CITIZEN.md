@@ -185,5 +185,10 @@ The citizen's own 12 tests pass on ARM (6.05 s) as on the VM.
   Aesir's ledger as always.
 - No fabric presence: joining is still the local act of
   Y-021 until Part III.
-- Power/thermal telemetry acting on real heat is Y-044;
-  this slice's governor reads the seams it is handed.
+- Power/thermal telemetry has landed (Y-044): this factory
+  wires a `PowerTelemetry` into the agent, and with no
+  readings provider handed in the governor's thermal reading
+  is the telemetry's sampled hottest zone (see
+  POWER_TELEMETRY.md). A live power/thermal run on Mimir
+  under that module is not claimed there; it belongs to the
+  Part VIII road.

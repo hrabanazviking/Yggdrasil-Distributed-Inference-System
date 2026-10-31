@@ -94,7 +94,7 @@ from referencing import Registry, Resource
 from yggdrasil.census import CensusCollector, validate_census
 from yggdrasil.degradation import DegradationTracker
 from yggdrasil.failure_shapes import FailureMonitor
-from yggdrasil.governor import ResourceGovernor
+from yggdrasil.governor import ResourceGovernor, system_readings
 from yggdrasil.governor import validate_policy as validate_governor_policy
 from yggdrasil.idle_generosity import IdleGenerosity
 from yggdrasil.local_queue import LocalQueue
@@ -104,6 +104,7 @@ from yggdrasil.model_store import ModelStore
 from yggdrasil.node_agent import NodeAgent
 from yggdrasil.node_journal import NodeJournal
 from yggdrasil.pi_citizen import hailo_claim_for
+from yggdrasil.power_telemetry import PowerTelemetry
 from yggdrasil.quant_fitness import QuantFitness
 from yggdrasil.sandbox import TaskSandbox
 from yggdrasil.task_security import TaskGuard
@@ -458,6 +459,7 @@ def build_laptop_citizen_agent(
     fetch_policy=None,
     journal_path=None,
     task_security_policy=None,
+    power_snapshot=None,
 ) -> tuple[NodeAgent, dict]:
     """The full laptop citizen: evaluate first, and refuse a
     machine that does not meet the profile; then wire the
@@ -504,8 +506,26 @@ def build_laptop_citizen_agent(
             f"this machine does not meet the laptop citizen profile (failed: "
             f"{', '.join(failed)}); it is not dressed as a laptop citizen"
         )
+    telemetry = PowerTelemetry(
+        config.node_id, snapshot=power_snapshot, simulated=simulated, now=now
+    )
+    governor_readings = readings
+    if governor_readings is None:
+        # Y-044: with no readings provider handed in, the
+        # governor's thermal reading IS the telemetry's
+        # hottest zone, sampled at evaluation time — the
+        # verdict and its citation rest on one measurement.
+        # Memory and CPU still come from the governor's own
+        # system readings (Y-028).
+        def governor_readings():
+            base = system_readings()
+            sample = telemetry.sample()
+            if sample["hottest_c"] is not None:
+                base["thermal_c"] = sample["hottest_c"]
+            return base
+
     governor = ResourceGovernor(
-        config.node_id, dict(profile["governor_policy"]), readings=readings, now=now
+        config.node_id, dict(profile["governor_policy"]), readings=governor_readings, now=now
     )
     store = ModelStore(store_root, now=now)
     budgets = budgets_from_census(census, max_slots=profile["max_slots"])
@@ -558,6 +578,7 @@ def build_laptop_citizen_agent(
         degradation_tracker=tracker,
         idle_generosity=generosity,
         task_guard=guard,
+        power_telemetry=telemetry,
         citizen=report,
     )
     return agent, report

@@ -249,6 +249,7 @@ from yggdrasil.model_fetch import ModelFetchError
 from yggdrasil.model_lifecycle import ModelLifecycleError
 from yggdrasil.node_journal import JournalError
 from yggdrasil.observability import LocalJsonlSink, make_event
+from yggdrasil.power_telemetry import PowerTelemetryError
 from yggdrasil.quant_fitness import QuantFitnessError
 from yggdrasil.sandbox import SandboxError
 from yggdrasil.task_security import TaskSecurityError
@@ -403,6 +404,7 @@ class NodeAgent:
         degradation_tracker=None,
         idle_generosity=None,
         task_guard=None,
+        power_telemetry=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -483,6 +485,12 @@ class NodeAgent:
         # any lease or queue slot is spent, and status()
         # carries its report.
         self._task_guard = task_guard
+        # The power/thermal telemetry (Y-044): the node's
+        # senses for heat and power. When wired, samples are
+        # taken on asking, status() carries its report, and
+        # governor_citation() pairs the governor's verdicts
+        # with the reading they rest on.
+        self._power_telemetry = power_telemetry
         self._health_endpoint: NodeHealthEndpoint | None = None
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
@@ -636,6 +644,47 @@ class NodeAgent:
         """The task guard's report (Y-043), or None when no
         guard is wired — judging nothing, claiming nothing."""
         return self._task_guard.report() if self._task_guard is not None else None
+
+    # -- power and thermal telemetry (Y-044) ---------------------------------
+
+    @property
+    def power_telemetry(self):
+        """The wired power/thermal telemetry (Y-044), or None
+        when the agent was built without it."""
+        return self._power_telemetry
+
+    def sample_power_telemetry(self) -> dict | None:
+        """Take one power/thermal sample (Y-044), or None when
+        no telemetry is wired — sensing nothing, claiming
+        nothing."""
+        if self._power_telemetry is None:
+            return None
+        try:
+            return self._power_telemetry.sample()
+        except PowerTelemetryError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def power_telemetry_report(self) -> dict | None:
+        """The telemetry history report (Y-044), or None when
+        no telemetry is wired. Asking never samples."""
+        return self._power_telemetry.report() if self._power_telemetry is not None else None
+
+    def governor_citation(self) -> dict | None:
+        """The governor's last verdict cited against the newest
+        telemetry sample (Y-044): the state it rests on, with
+        the reading's age and staleness named. None when either
+        the governor or the telemetry is unwired, or when the
+        governor has not evaluated yet — no verdict is forced
+        by asking."""
+        if self._power_telemetry is None or self._governor is None:
+            return None
+        state = self._governor.last_state
+        if state is None:
+            return None
+        try:
+            return self._power_telemetry.cite(state)
+        except PowerTelemetryError as exc:
+            raise NodeAgentError(str(exc)) from exc
 
     # -- task execution (Y-029) -----------------------------------------
 
@@ -1498,6 +1547,7 @@ class NodeAgent:
                 self._idle_generosity.current() if self._idle_generosity is not None else None
             ),
             "task_security": self.task_security_report(),
+            "power_telemetry": self.power_telemetry_report(),
             "citizen": self._citizen,
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,

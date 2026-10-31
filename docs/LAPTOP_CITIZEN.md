@@ -240,7 +240,12 @@ stdlib module for scripts run from that directory.)
   machine; claim `absent`).
 - No fabric presence: joining is still the local act of
   Y-021 until Part III.
-- Power/thermal telemetry acting on real heat is Y-044;
-  this slice's governor reads the seams it is handed.
+- Power/thermal telemetry has landed (Y-044): this factory
+  wires a `PowerTelemetry` into the agent, and with no
+  readings provider handed in the governor's thermal reading
+  is the telemetry's sampled hottest zone (see
+  POWER_TELEMETRY.md). A live power/thermal run on
+  purplelongship under that module is not claimed there; it
+  belongs to the Part VIII road.
   purplelongship as Jotunheim under sustained load is
   Y-169.

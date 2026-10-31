@@ -227,6 +227,13 @@ IDLE_GENEROSITY.md); and task security has landed
 task at the door before any lease or queue slot is spent:
 tasks are data, never code, unless a signed task kind
 explicitly says so, and `status()` carries the guard's
-report under `task_security`; see TASK_SECURITY.md); no fabric
+report under `task_security`; see TASK_SECURITY.md); and
+power/thermal telemetry has landed (Y-044 — an agent built
+with `power_telemetry=` samples measured zones, supplies,
+and watts via `sample_power_telemetry()`, carries the
+history report in `status()` under `power_telemetry`, and
+cites the governor's last verdict against the reading it
+rests on via `governor_citation()`; the Pi and laptop
+factories wire it; see POWER_TELEMETRY.md); no fabric
 join (Part III). The skeleton has run in tests on this VM only;
 nothing here is a hardware claim.
