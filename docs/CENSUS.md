@@ -125,4 +125,10 @@ citizen's gate requires the vendor tool's reading of the
 actual card supplied as a probe); the VM citizen has been
 measured on its own at Y-035 (see VM_CITIZEN.md — this VM's
 census is that citizen's own: CPU-only, with no thermal
-reading and no VRAM, both reported as absences).
+reading and no VRAM, both reported as absences). The phone
+citizen at Y-036 has NOT been measured on any phone (see
+PHONE_CITIZEN.md): its acceptance censuses are injected
+probes shaped as a declared, representative phone shape,
+labelled SIMULATED — no census of a real phone exists in
+this tree, and on-device proof is NOT PROVEN until one
+does.

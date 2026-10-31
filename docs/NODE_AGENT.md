@@ -175,6 +175,10 @@ Aesir engine's ledger grade through the collector's engine
 seam; see LAPTOP_CITIZEN.md); the VM citizen has landed
 (Y-035 — the same factory shape on this VM as a CPU-only
 node, its cpu_only gate biting on any accelerator in the
-census; see VM_CITIZEN.md); no fabric
+census; see VM_CITIZEN.md); and the phone citizen has
+landed (Y-036 — the same factory shape for a phone: a
+small-model ceiling and a battery governor policy, both
+as data, built and SIMULATED only — on-device proof NOT
+PROVEN until a phone runs it; see PHONE_CITIZEN.md); no fabric
 join (Part III). The skeleton has run in tests on this VM only;
 nothing here is a hardware claim.

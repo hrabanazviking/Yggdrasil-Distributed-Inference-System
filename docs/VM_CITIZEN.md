@@ -8,7 +8,9 @@ registered in the Y-016 manifest). Its whole character is
 in the roadmap's own words: honest speeds, no pretence.
 The Pi citizen is Y-033 and the laptop citizen is Y-034;
 with this slice all three citizens named by the Part II
-gate (Y-048) exist.*
+gate (Y-048) exist. The phone citizen followed at Y-036
+(PHONE_CITIZEN.md), built and SIMULATED only — on-device
+proof NOT PROVEN until a phone runs it.*
 
 ## The machine, measured
 

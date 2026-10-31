@@ -9,7 +9,9 @@ this slice adds the schema's two optional accelerator
 fields, `required_accelerator_kind` and `min_vram_gb`).
 Its engine is Project Aesir's GPU line, graded through
 the census exactly as Y-024 built it. The Pi citizen is
-Y-033; the VM citizen is Y-035.*
+Y-033; the VM citizen is Y-035; the phone citizen is
+Y-036 (PHONE_CITIZEN.md — built and SIMULATED only,
+on-device proof NOT PROVEN until a phone runs it).*
 
 ## The machine, measured
 

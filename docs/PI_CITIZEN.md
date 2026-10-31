@@ -4,8 +4,10 @@
 Mimir-class ARM, in `src/yggdrasil/pi_citizen.py`, wearing a
 profile that lives as data in `profiles/pi_citizen.json`
 (`citizen_profile` v1, registered in the Y-016 manifest). The
-laptop citizen is Y-034 (LAPTOP_CITIZEN.md) and the VM
-citizen is Y-035.*
+laptop citizen is Y-034 (LAPTOP_CITIZEN.md), the VM
+citizen is Y-035, and the phone citizen is Y-036
+(PHONE_CITIZEN.md — built and SIMULATED only, on-device
+proof NOT PROVEN until a phone runs it).*
 
 ## The machine, measured
 
