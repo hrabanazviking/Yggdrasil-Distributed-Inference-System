@@ -1,0 +1,1 @@
+{"$defs":{"role":{"enum":["asgard","midgard","jotunheim","svartalfheim","nidavellir","alfheim","vanaheim","niflheim","muspelheim"],"type":"string"}},"$id":"yggdrasil/contracts/v1/roles","$schema":"https://json-schema.org/draft/2020-12/schema","title":"Nine-worlds roles v1"}
