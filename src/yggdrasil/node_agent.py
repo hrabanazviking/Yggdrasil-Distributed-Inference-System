@@ -108,6 +108,18 @@ every later Part II slice hangs its machinery on:
   recorded as a ``node.heartbeat`` Y-013 event (counts and
   names only). ``status()`` carries the endpoint's beat
   count and last sequence number.
+- **failure shapes (Y-032, grown onto the skeleton):** a
+  ``failure_monitor=`` handed in at construction sorts the
+  node's accidents into the four shapes — engine crash, OOM,
+  thermal throttle, model corrupt — each detected, contained,
+  and reported distinctly (``yggdrasil.failure_shapes``).
+  ``execute_task`` feeds every finished sandbox report to it
+  (a crashed engine is quarantined, a corrupt model is
+  quarantined — and unloaded when resident), ``check_failures``
+  polls the wired store/governor/readings through it, and
+  ``status()`` carries its validated failure report. Without
+  one wired, the agent reports failures exactly as before:
+  under their Y-007 names, unsorted.
 - **observability:** every lifecycle move is recorded as a
   Y-013 EventEnvelope from the ``node_agent`` component (the
   first real emitter in the tree), and written to the config's
@@ -139,6 +151,7 @@ from referencing import Registry, Resource
 
 from yggdrasil import __version__
 from yggdrasil.census import CensusCollector, census_fingerprint
+from yggdrasil.failure_shapes import FailureError
 from yggdrasil.governor import GovernorError
 from yggdrasil.health_endpoint import HealthError, NodeHealthEndpoint
 from yggdrasil.identity import (
@@ -295,6 +308,7 @@ class NodeAgent:
         governor=None,
         sandbox=None,
         local_queue=None,
+        failure_monitor=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -333,6 +347,11 @@ class NodeAgent:
         # priority order. When wired, health() reports its
         # true depth and queue_task holds work for the node.
         self._local_queue = local_queue
+        # The failure monitor (Y-032): the four failure shapes,
+        # detected, contained, and reported distinctly. When
+        # wired, execute_task feeds it every sandbox report and
+        # check_failures polls through it.
+        self._failure_monitor = failure_monitor
         self._health_endpoint: NodeHealthEndpoint | None = None
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
@@ -403,6 +422,32 @@ class NodeAgent:
         agent was built without one."""
         return self._local_queue
 
+    @property
+    def failure_monitor(self):
+        """The node's failure monitor (Y-032), or None when the
+        agent was built without one."""
+        return self._failure_monitor
+
+    # -- failure shapes (Y-032) -------------------------------------------
+
+    def check_failures(self, readings: dict | None = None) -> dict:
+        """Poll the wired components for failure shapes (Y-032):
+        model corruption by store re-hash, thermal throttling
+        by the governor's verdict, OOM by readings — each new
+        shape contained and recorded — and answer the validated
+        failure report."""
+        if self._failure_monitor is None:
+            raise NodeAgentError("this agent has no failure monitor wired")
+        try:
+            return self._failure_monitor.check_all(readings)
+        except FailureError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def failure_report(self) -> dict | None:
+        """The failure monitor's report (Y-032), or None when no
+        monitor is wired — polling nothing, claiming nothing."""
+        return self._failure_monitor.report() if self._failure_monitor is not None else None
+
     # -- task execution (Y-029) -----------------------------------------
 
     def execute_task(
@@ -441,11 +486,22 @@ class NodeAgent:
                 except ModelLifecycleError as exc:
                     raise NodeAgentError(str(exc)) from exc
             try:
-                return self._sandbox.run(
+                outcome = self._sandbox.run(
                     task, runner, engine=engine, model=model, on_event=on_event
                 )
             except SandboxError as exc:
                 raise NodeAgentError(str(exc)) from exc
+            if self._failure_monitor is not None:
+                # Y-032: a finished run's failure is sorted into
+                # its shape and contained (engine quarantined,
+                # model quarantined) before the caller sees it.
+                try:
+                    self._failure_monitor.ingest_sandbox_report(
+                        outcome[2], engine=engine, model=model
+                    )
+                except FailureError as exc:
+                    raise NodeAgentError(str(exc)) from exc
+            return outcome
         finally:
             try:
                 if acquired:
@@ -937,6 +993,7 @@ class NodeAgent:
                 else None
             ),
             "queue": self.queue_report(),
+            "failures": self.failure_report(),
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,
             "census": (

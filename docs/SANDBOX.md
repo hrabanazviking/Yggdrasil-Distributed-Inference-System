@@ -127,7 +127,9 @@ wired, the agent still only leases, exactly as before.
 No OS-level isolation — this sandbox bounds the stream it
 is handed, in-process; it does not confine syscalls, files,
 or memory (tasks-are-data enforcement is Y-043; engine
-crash / OOM containment is Y-032; the local queue that feeds
+crash / OOM containment has landed at Y-032 — see
+FAILURE_SHAPES.md, whose monitor the agent feeds with
+every sandbox report when one is wired; the local queue that feeds
 tasks in has landed at Y-031 — see LOCAL_QUEUE.md, whose
 `execute_next_queued` serves its head through this sandbox).
 No hardware claim: the suite's runners

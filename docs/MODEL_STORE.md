@@ -95,7 +95,10 @@ Loading and unloading of models into slots is Y-027 (landed:
 resident models when a lifecycle is wired); no fetching
 (Y-037), no
 corrupt-model failure shape beyond this slice's status report
-(Y-032 names the failure classes), and no hardware claim: the
+(the failure classes have landed at Y-032 — see
+FAILURE_SHAPES.md: a corrupt/missing verification is the
+`model_corrupt` shape, quarantined and unloaded when
+resident), and no hardware claim: the
 suite's fixture files are SIMULATED byte strings with real
 hashes — the hashing discipline is proven, no real model's
 presence on any named device is claimed.

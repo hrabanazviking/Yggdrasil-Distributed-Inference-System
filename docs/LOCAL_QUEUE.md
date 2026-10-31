@@ -125,7 +125,9 @@ sees or shares this line (fabric carriage is Part III,
 load-aware placement reading these numbers is Part IV).
 No task expires in the queue in this slice: a deadline is
 enforced by the sandbox at run time (Y-029), and queue-wait
-expiry as a named failure shape belongs with Y-032's
-failure work if it lands there. No hardware claim: the
+expiry was considered with Y-032's failure work and stays
+out of its four shapes (a deadline outcome is the sandbox's
+`deadline_unmeetable`, not a node failure — see
+FAILURE_SHAPES.md). No hardware claim: the
 suite's clocks are injected and its agents run on this VM;
 the citizens are Y-033 – Y-035.

@@ -160,7 +160,12 @@ model facts assemble into; see HEALTH_ENDPOINT.md); and the
 local queue has landed (Y-031 — an agent built with
 `local_queue=` holds tasks in priority order, reports the
 true depth in `health()`/`heartbeat()`, and serves the head
-through `execute_next_queued`; see LOCAL_QUEUE.md); no fabric
+through `execute_next_queued`; see LOCAL_QUEUE.md); and the
+failure shapes have landed (Y-032 — an agent built with
+`failure_monitor=` sorts engine crash / OOM / thermal
+throttle / model corrupt distinctly, contains each, and
+carries the failure report in `status()`; see
+FAILURE_SHAPES.md); no fabric
 join (Part III), and no real hardware citizen
 (Y-033 – Y-035). The skeleton has run in tests on this VM only;
 nothing here is a hardware claim.
