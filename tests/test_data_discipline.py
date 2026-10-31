@@ -57,6 +57,7 @@ def test_manifest_validates_and_covers_the_repo():
         "campaign_file",  # added by Y-019, registered in its own slice
         "pi_citizen_profile",  # added by Y-033, registered in its own slice
         "laptop_citizen_profile",  # added by Y-034, registered in its own slice
+        "vm_citizen_profile",  # added by Y-035, registered in its own slice
     }
     assert reports["role_catalog"].version == "yggdrasil-role-catalog-v1"
     assert reports["role_catalog"].items_checked == 9  # the nine worlds

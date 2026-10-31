@@ -134,6 +134,16 @@ reads zero incidents. The model loader is Y-027's
 SIMULATED loader — residency is bookkeeping; no weights
 move.
 
+**One defect found by the full suite, fixed in the same
+slice** (the Y-035 fix commit): the hard-coded manifest
+census in `tests/test_data_discipline.py` still named the
+pre-Y-035 set of registered data-file ids, so the first
+full-suite run failed that one test (1 failed, 430
+passed, read from the run's log file). The census now
+includes `vm_citizen_profile` — the same update every
+registering slice before this one made — and the re-run
+full suite is green: **431 passed**.
+
 ## The live run on this VM
 
 Run on 2026-10-31 (~04:35–04:37 EDT) against this slice's
