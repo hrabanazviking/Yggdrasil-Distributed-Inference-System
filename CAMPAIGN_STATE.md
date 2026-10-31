@@ -15,7 +15,7 @@
 
 ## Position
 
-- Banked: 9 / 244. In progress: Part I (next: Y-010 threat model).
+- Banked: 10 / 244. In progress: Part I (next: Y-011 identity foundation).
 
 ## Slice log
 
@@ -31,3 +31,4 @@
 | Y-007 | BANKED | Task contract v1: envelopes + stream shape + 16-name error taxonomy; validated |
 | Y-008 | BANKED | Registry contract v1: spec §4.2 model entry schema with graded measured speeds |
 | Y-009 | BANKED | Scaffolding: package + pyproject + systemd unit as data + manual-dispatch CI; pytest 9 passed, ruff clean (venv) |
+| Y-010 | BANKED | Threat model: `docs/THREAT_MODEL.md` + register `security/threat_register.json` (10 threats; roadmap's 4 named enemies = T-01–T-04) shaped by `threat_record.schema.json`; every mitigation mapped to its building slice, residual risks stated, no control claimed built; pytest 16 passed, ruff clean |
