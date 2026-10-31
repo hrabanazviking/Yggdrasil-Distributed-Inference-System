@@ -125,7 +125,8 @@ slices — the Pi (Y-033), the laptop (Y-034), and this VM
 ## Not built here
 
 Hash-verified
-model presence (the model store, Y-026 — `list_models()` here
+model presence has landed as its own slice (the model store,
+Y-026 — `list_models()` here
 is Ollama's word, not hash proof), model load/unload slots
 (Y-027), bounded task execution (Y-029 — this adapter runs
 what it is handed; the sandbox is its own slice), the adapter

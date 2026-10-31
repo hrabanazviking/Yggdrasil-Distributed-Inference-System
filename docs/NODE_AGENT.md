@@ -128,8 +128,9 @@ cause on stderr — no traceback, no half-started node.
 
 ## Not built here
 
-No model store
-(Y-026), no governor beyond drain's shedding flag (Y-028), no
+The model store has landed (Y-026 — an agent built with
+`model_store=` lists only hash-verified models in its census);
+no governor beyond drain's shedding flag (Y-028), no
 task execution (Y-029), no heartbeat endpoint (Y-030), no queue
 (Y-031), no fabric join (Part III), and no real hardware citizen
 (Y-033 – Y-035). The skeleton has run in tests on this VM only;

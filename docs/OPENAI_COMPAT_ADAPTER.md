@@ -177,7 +177,7 @@ VM (Y-035) — each on its own device, recorded as its own proof.
 
 ## Not built here
 
-Hash-verified model presence (the model store, Y-026 —
+Hash-verified model presence has landed as its own slice (the model store, Y-026 —
 `list_models()` here is the endpoint's word, not hash proof),
 model load/unload slots (Y-027 — llama.cpp's own `/slots`
 and load/unload routes are not driven here), bounded task

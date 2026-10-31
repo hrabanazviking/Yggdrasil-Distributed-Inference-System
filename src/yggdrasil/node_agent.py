@@ -47,7 +47,9 @@ every later Part II slice hangs its machinery on:
   adapters (Y-023 onward) feed the collector through the
   constructor's ``census_engines`` / ``census_models`` seams —
   an adapter's own discovery, in the census exactly as the
-  adapter reported it.
+  adapter reported it. A model store (Y-026) handed in as
+  ``model_store=`` fills the models seam by default: the
+  census then lists only hash-verified models.
 - **observability:** every lifecycle move is recorded as a
   Y-013 EventEnvelope from the ``node_agent`` component (the
   first real emitter in the tree), and written to the config's
@@ -225,6 +227,7 @@ class NodeAgent:
         census_probes=None,
         census_engines=None,
         census_models=None,
+        model_store=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -238,6 +241,13 @@ class NodeAgent:
         # exactly as the collector accepts (Y-022).
         self._census_probes = census_probes
         self._census_engines = census_engines
+        # The model store (Y-026): when one is handed in and no
+        # explicit census_models was given, the census lists
+        # exactly the store's hash-verified models — presence is
+        # the store's measurement, re-hashed on every census.
+        self._model_store = model_store
+        if census_models is None and model_store is not None:
+            census_models = model_store.model_names_for_census
         self._census_models = census_models
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
@@ -277,6 +287,12 @@ class NodeAgent:
     def custody(self) -> dict:
         """Where this node's keys live, in Y-011's own words."""
         return describe_custody()
+
+    @property
+    def model_store(self):
+        """The node's model store (Y-026), or None when the
+        agent was built without one."""
+        return self._model_store
 
     # -- census (Y-022) -------------------------------------------------
 

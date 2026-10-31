@@ -109,8 +109,9 @@ never laundered; and the llama.cpp / OpenAI-compatible
 adapter, Y-025 — both flavours, embed/vision claimed only
 for operator-declared models — all reporting their own
 reachability into the census through the collector's
-callable seams), no model presence (Y-026, and
-only with hash proof), no governor acting on these numbers
+callable seams), model presence with hash proof (the model
+store, Y-026 — an agent built with a store lists exactly its
+hash-verified models, re-hashed on every census), no governor acting on these numbers
 (Y-028 — the governor's thermal decisions cite this telemetry
 at Y-044), no fabric carrying the census to peers (Part III;
 the registry service, Y-053, is where censuses travel), and no
