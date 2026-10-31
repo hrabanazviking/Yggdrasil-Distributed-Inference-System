@@ -92,8 +92,11 @@ will verify against the same pins.
 
 Loading and unloading of models into slots is Y-027 (landed:
 `docs/MODEL_LIFECYCLE.md` — the agent's health report now lists
-resident models when a lifecycle is wired); no fetching
-(Y-037), no
+resident models when a lifecycle is wired); fetching has
+landed (Y-037 — a fetcher gated by policy stocks this store
+from a peer or a named source, verifying the staged bytes
+against the request's pin before `add()` is ever called;
+see MODEL_FETCH.md), no
 corrupt-model failure shape beyond this slice's status report
 (the failure classes have landed at Y-032 — see
 FAILURE_SHAPES.md: a corrupt/missing verification is the

@@ -92,6 +92,7 @@ from yggdrasil.failure_shapes import FailureMonitor
 from yggdrasil.governor import ResourceGovernor
 from yggdrasil.governor import validate_policy as validate_governor_policy
 from yggdrasil.local_queue import LocalQueue
+from yggdrasil.model_fetch import ModelFetcher
 from yggdrasil.model_lifecycle import ModelLifecycle, budgets_from_census
 from yggdrasil.model_store import ModelStore
 from yggdrasil.node_agent import NodeAgent
@@ -424,6 +425,8 @@ def build_vm_citizen_agent(
     simulated: bool = False,
     now=None,
     key_store=None,
+    fetch_transport=None,
+    fetch_policy=None,
 ) -> tuple[NodeAgent, dict]:
     """The full VM citizen: evaluate first, and refuse a machine
     that does not meet the profile; then wire the whole Part II
@@ -483,6 +486,14 @@ def build_vm_citizen_agent(
         model_lifecycle=lifecycle,
         now=now,
     )
+    fetcher = ModelFetcher(
+        config.node_id,
+        store,
+        policy=fetch_policy,
+        transport=fetch_transport,
+        now=now,
+        simulated=simulated,
+    )
     agent = NodeAgent(
         config,
         key_store=key_store,
@@ -495,6 +506,7 @@ def build_vm_citizen_agent(
         sandbox=sandbox,
         local_queue=queue,
         failure_monitor=monitor,
+        model_fetcher=fetcher,
         citizen=report,
     )
     return agent, report

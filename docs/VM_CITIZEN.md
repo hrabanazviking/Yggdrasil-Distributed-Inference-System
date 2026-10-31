@@ -195,6 +195,14 @@ and refusing under real load*.
 
 ## Not built / not claimed here
 
+- Model fetch duty (Y-037) is wired by this factory: the
+  agent carries a `model_fetcher=` over its store (policy
+  and transport are the factory's `fetch_policy=` /
+  `fetch_transport=` seams; with no transport handed in, a
+  fetch fails honestly as `no_transport_wired` — no real
+  peer has carried a model for this tree yet; see
+  MODEL_FETCH.md).
+
 - No systemd service is installed on this VM by this
   slice: enabling `deploy/yggdrasil-node.service` here
   stays the operator's act, with identity provisioning

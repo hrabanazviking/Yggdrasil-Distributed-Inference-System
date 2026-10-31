@@ -180,6 +180,14 @@ like the other citizens'.
 
 ## Not built / not claimed here
 
+- Model fetch duty (Y-037) is wired by this factory: the
+  agent carries a `model_fetcher=` over its store (policy
+  and transport are the factory's `fetch_policy=` /
+  `fetch_transport=` seams; with no transport handed in, a
+  fetch fails honestly as `no_transport_wired` — no real
+  peer has carried a model for this tree yet; see
+  MODEL_FETCH.md).
+
 - **No on-device proof of any kind: NOT PROVEN.** No
   phone has run the citizen, been measured by it, or had
   its battery, thermal, or performance behaviour observed

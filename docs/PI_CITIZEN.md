@@ -149,6 +149,14 @@ The citizen's own 12 tests pass on ARM (6.05 s) as on the VM.
 
 ## Not built / not claimed here
 
+- Model fetch duty (Y-037) is wired by this factory: the
+  agent carries a `model_fetcher=` over its store (policy
+  and transport are the factory's `fetch_policy=` /
+  `fetch_transport=` seams; with no transport handed in, a
+  fetch fails honestly as `no_transport_wired` — no real
+  peer has carried a model for this tree yet; see
+  MODEL_FETCH.md).
+
 - No systemd service is installed on Mimir by this slice:
   enabling `deploy/yggdrasil-node.service` there stays the
   operator's act, with identity provisioning (Y-011) done by

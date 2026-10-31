@@ -179,6 +179,11 @@ census; see VM_CITIZEN.md); and the phone citizen has
 landed (Y-036 — the same factory shape for a phone: a
 small-model ceiling and a battery governor policy, both
 as data, built and SIMULATED only — on-device proof NOT
-PROVEN until a phone runs it; see PHONE_CITIZEN.md); no fabric
+PROVEN until a phone runs it; see PHONE_CITIZEN.md); and
+model fetch duty has landed (Y-037 — an agent built with
+`model_fetcher=` fetches a model it lacks from a peer or a
+named source when policy allows, hash-verified, into its
+store, and carries the fetch report in `status()`; see
+MODEL_FETCH.md); no fabric
 join (Part III). The skeleton has run in tests on this VM only;
 nothing here is a hardware claim.

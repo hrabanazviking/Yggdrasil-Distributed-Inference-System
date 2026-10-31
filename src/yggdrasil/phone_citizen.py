@@ -103,6 +103,7 @@ from yggdrasil.failure_shapes import FailureMonitor
 from yggdrasil.governor import ResourceGovernor
 from yggdrasil.governor import validate_policy as validate_governor_policy
 from yggdrasil.local_queue import LocalQueue
+from yggdrasil.model_fetch import ModelFetcher
 from yggdrasil.model_lifecycle import ModelLifecycle, budgets_from_census
 from yggdrasil.model_store import ModelStore
 from yggdrasil.node_agent import NodeAgent
@@ -553,6 +554,8 @@ def build_phone_citizen_agent(
     simulated: bool = False,
     now=None,
     key_store=None,
+    fetch_transport=None,
+    fetch_policy=None,
 ) -> tuple[NodeAgent, dict]:
     """The full phone citizen: evaluate first, and refuse a
     machine that does not meet the profile; then wire the
@@ -617,6 +620,25 @@ def build_phone_citizen_agent(
         model_lifecycle=lifecycle,
         now=now,
     )
+    if fetch_policy is None:
+        # The phone's small-models-only law (Y-036) binds its
+        # fetch duty too: the default fetch policy caps a
+        # fetch at the profile's own model ceiling.
+        fetch_policy = {
+            "version": 1,
+            "allow_peer_fetch": True,
+            "named_sources": [],
+            "max_model_bytes": int(profile["max_model_size_gb"] * (1024**3)),
+            "min_free_disk_bytes": 0,
+        }
+    fetcher = ModelFetcher(
+        config.node_id,
+        store,
+        policy=fetch_policy,
+        transport=fetch_transport,
+        now=now,
+        simulated=simulated,
+    )
     agent = NodeAgent(
         config,
         key_store=key_store,
@@ -629,6 +651,7 @@ def build_phone_citizen_agent(
         sandbox=sandbox,
         local_queue=queue,
         failure_monitor=monitor,
+        model_fetcher=fetcher,
         citizen=report,
     )
     return agent, report

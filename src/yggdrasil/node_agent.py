@@ -129,6 +129,17 @@ every later Part II slice hangs its machinery on:
   ``status()`` under ``citizen`` so the operator's door can
   read which citizen this node is and on what measured facts.
   Without one, ``status()`` carries ``citizen: None``.
+- **model fetch duty (Y-037, grown onto the skeleton):** a
+  ``model_fetcher=`` handed in at construction stocks the
+  node's store from a mesh peer or a named source, when
+  policy allows, hash-verified against the pin the request
+  itself carries (``yggdrasil.model_fetch``). ``fetch_model``
+  delegates to it (a started or joined node fetches; a
+  draining node stocks nothing new), outcomes come back as
+  validated fetch records — fetched, already present,
+  refused, failed, each named — and ``status()`` carries the
+  fetcher's report. Without one wired, the agent fetches
+  nothing, as before.
 - **observability:** every lifecycle move is recorded as a
   Y-013 EventEnvelope from the ``node_agent`` component (the
   first real emitter in the tree), and written to the config's
@@ -173,6 +184,7 @@ from yggdrasil.identity import (
     verify_certificate,
 )
 from yggdrasil.local_queue import QueueError
+from yggdrasil.model_fetch import ModelFetchError
 from yggdrasil.model_lifecycle import ModelLifecycleError
 from yggdrasil.observability import LocalJsonlSink, make_event
 from yggdrasil.sandbox import SandboxError
@@ -319,6 +331,7 @@ class NodeAgent:
         local_queue=None,
         failure_monitor=None,
         citizen=None,
+        model_fetcher=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -366,6 +379,11 @@ class NodeAgent:
         # evaluation this agent was built under, carried into
         # status() verbatim. The agent evaluates nothing itself.
         self._citizen = citizen
+        # The model fetcher (Y-037): policy-gated, hash-verified
+        # fetching into the node's store from a peer or a named
+        # source. When wired, fetch_model delegates to it and
+        # status() carries its report.
+        self._model_fetcher = model_fetcher
         self._health_endpoint: NodeHealthEndpoint | None = None
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
@@ -447,6 +465,12 @@ class NodeAgent:
         """The citizen report this agent was built under
         (Y-033), or None when no citizen factory built it."""
         return self._citizen
+
+    @property
+    def model_fetcher(self):
+        """The node's model fetcher (Y-037), or None when the
+        agent was built without one."""
+        return self._model_fetcher
 
     # -- failure shapes (Y-032) -------------------------------------------
 
@@ -602,6 +626,28 @@ class NodeAgent:
         """The local queue's numbers (Y-031), or None when no
         queue is wired."""
         return self._local_queue.report() if self._local_queue is not None else None
+
+    # -- model fetch duty (Y-037) ---------------------------------------
+
+    def fetch_model(self, request: dict) -> dict:
+        """Fetch a model this node lacks into its store
+        (Y-037): policy-gated, hash-verified against the pin
+        the request carries. Only a started or joined node
+        fetches — a draining node stocks nothing new. The
+        outcome is the fetcher's validated record, never an
+        exception, unless the request itself is malformed."""
+        if self._model_fetcher is None:
+            raise NodeAgentError("this agent has no model fetcher wired")
+        self._require("fetch_model", STARTED, JOINED)
+        try:
+            return self._model_fetcher.fetch_model(request)
+        except ModelFetchError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def fetch_report(self) -> dict | None:
+        """The fetch duty's report (Y-037), or None when no
+        fetcher is wired — fetching nothing, claiming nothing."""
+        return self._model_fetcher.report() if self._model_fetcher is not None else None
 
     # -- model lifecycle (Y-027) ------------------------------------------
 
@@ -1014,6 +1060,7 @@ class NodeAgent:
             ),
             "queue": self.queue_report(),
             "failures": self.failure_report(),
+            "model_fetch": self.fetch_report(),
             "citizen": self._citizen,
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,
