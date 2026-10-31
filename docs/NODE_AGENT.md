@@ -222,6 +222,11 @@ its spare capacity fresh from its own present facts via
 `generosity_advertisement()`: idle advertises, busy
 withdraws with reasons named, and `status()` carries the
 last advertisement under `generosity`; see
-IDLE_GENEROSITY.md); no fabric
+IDLE_GENEROSITY.md); and task security has landed
+(Y-043 — an agent built with `task_guard=` judges every
+task at the door before any lease or queue slot is spent:
+tasks are data, never code, unless a signed task kind
+explicitly says so, and `status()` carries the guard's
+report under `task_security`; see TASK_SECURITY.md); no fabric
 join (Part III). The skeleton has run in tests on this VM only;
 nothing here is a hardware claim.

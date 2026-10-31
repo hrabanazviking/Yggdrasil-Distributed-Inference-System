@@ -251,6 +251,7 @@ from yggdrasil.node_journal import JournalError
 from yggdrasil.observability import LocalJsonlSink, make_event
 from yggdrasil.quant_fitness import QuantFitnessError
 from yggdrasil.sandbox import SandboxError
+from yggdrasil.task_security import TaskSecurityError
 
 _ROOT = Path(__file__).resolve().parents[2]
 _SCHEMAS = _ROOT / "contracts" / "schemas"
@@ -401,6 +402,7 @@ class NodeAgent:
         node_journal=None,
         degradation_tracker=None,
         idle_generosity=None,
+        task_guard=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -475,6 +477,12 @@ class NodeAgent:
         # the agent's own load facts on every asking. When
         # wired, status() carries the last advertisement.
         self._idle_generosity = idle_generosity
+        # The task guard (Y-043): tasks are data, never code,
+        # unless a signed task kind explicitly says so. When
+        # wired, execute_task and queue_task consult it before
+        # any lease or queue slot is spent, and status()
+        # carries its report.
+        self._task_guard = task_guard
         self._health_endpoint: NodeHealthEndpoint | None = None
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
@@ -602,6 +610,33 @@ class NodeAgent:
         monitor is wired — polling nothing, claiming nothing."""
         return self._failure_monitor.report() if self._failure_monitor is not None else None
 
+    # -- task security (Y-043) ----------------------------------------------
+
+    @property
+    def task_guard(self):
+        """The wired task guard (Y-043), or None when the agent
+        was built without one."""
+        return self._task_guard
+
+    def _guard_task(self, task: dict, signature: dict | None) -> None:
+        """The task guard's door (Y-043): when a guard is wired,
+        the task is judged before any lease or queue slot is
+        spent — data allowed, signed code allowed under a
+        declared code kind, everything else refused by name
+        with its Y-007 error code. A refusal here means the
+        task never ran and is never journaled (Y-039's rule)."""
+        if self._task_guard is None:
+            return
+        try:
+            self._task_guard.require_allowed(task, signature)
+        except TaskSecurityError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def task_security_report(self) -> dict | None:
+        """The task guard's report (Y-043), or None when no
+        guard is wired — judging nothing, claiming nothing."""
+        return self._task_guard.report() if self._task_guard is not None else None
+
     # -- task execution (Y-029) -----------------------------------------
 
     def execute_task(
@@ -614,6 +649,8 @@ class NodeAgent:
         memory_bytes: int = 0,
         cpu_share: float = 0.0,
         on_event=None,
+        signature: dict | None = None,
+        already_guarded: bool = False,
     ):
         """Run one task in the sandbox (Y-029), behind this
         agent's lease: ``begin_task`` first (a joined node, the
@@ -630,6 +667,8 @@ class NodeAgent:
         if not isinstance(task, dict) or not isinstance(task.get("id"), str):
             raise NodeAgentError("execute_task needs a task envelope with an id")
         task_id = task["id"]
+        if not already_guarded:
+            self._guard_task(task, signature)
         self.begin_task(task_id, memory_bytes=memory_bytes, cpu_share=cpu_share)
         acquired = False
         try:
@@ -673,15 +712,18 @@ class NodeAgent:
 
     # -- local queue (Y-031) ----------------------------------------------
 
-    def queue_task(self, task: dict) -> dict:
+    def queue_task(self, task: dict, signature: dict | None = None) -> dict:
         """Hold one task in the local queue (Y-031); returns
         its validated queued-task entry. Only a joined node
         takes new held work — a draining node sheds, it does
         not gather. A full queue refuses by the Y-007 name
-        ``queue_full``; a duplicate id refuses by name."""
+        ``queue_full``; a duplicate id refuses by name. When a
+        task guard is wired (Y-043), the task is judged before
+        a queue slot is spent — a refused task is never held."""
         if self._local_queue is None:
             raise NodeAgentError("this agent has no local queue wired")
         self._require("queue_task", JOINED)
+        self._guard_task(task, signature)
         try:
             return self._local_queue.enqueue(task)
         except QueueError as exc:
@@ -736,6 +778,10 @@ class NodeAgent:
             memory_bytes=memory_bytes,
             cpu_share=cpu_share,
             on_event=on_event,
+            # Y-043: the task was judged by the guard when it
+            # was queued (queue_task) — its signature travelled
+            # with that asking, not with the held envelope.
+            already_guarded=True,
         )
         self._local_queue.remove(entry["task_id"])
         return outcome
@@ -1451,6 +1497,7 @@ class NodeAgent:
             "generosity": (
                 self._idle_generosity.current() if self._idle_generosity is not None else None
             ),
+            "task_security": self.task_security_report(),
             "citizen": self._citizen,
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,

@@ -126,7 +126,9 @@ wired, the agent still only leases, exactly as before.
 
 No OS-level isolation — this sandbox bounds the stream it
 is handed, in-process; it does not confine syscalls, files,
-or memory (tasks-are-data enforcement is Y-043; engine
+or memory (tasks-are-data enforcement has landed at Y-043 —
+see TASK_SECURITY.md, whose guard the agent consults before a
+task ever reaches this sandbox; engine
 crash / OOM containment has landed at Y-032 — see
 FAILURE_SHAPES.md, whose monitor the agent feeds with
 every sandbox report when one is wired; the local queue that feeds

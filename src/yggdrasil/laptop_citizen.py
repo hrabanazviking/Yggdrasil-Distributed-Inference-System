@@ -106,6 +106,7 @@ from yggdrasil.node_journal import NodeJournal
 from yggdrasil.pi_citizen import hailo_claim_for
 from yggdrasil.quant_fitness import QuantFitness
 from yggdrasil.sandbox import TaskSandbox
+from yggdrasil.task_security import TaskGuard
 
 _ROOT = Path(__file__).resolve().parents[2]
 _SCHEMAS = _ROOT / "contracts" / "schemas"
@@ -456,6 +457,7 @@ def build_laptop_citizen_agent(
     fetch_transport=None,
     fetch_policy=None,
     journal_path=None,
+    task_security_policy=None,
 ) -> tuple[NodeAgent, dict]:
     """The full laptop citizen: evaluate first, and refuse a
     machine that does not meet the profile; then wire the
@@ -535,6 +537,7 @@ def build_laptop_citizen_agent(
     )
     tracker = DegradationTracker(config.node_id, now=now)
     generosity = IdleGenerosity(config.node_id, now=now)
+    guard = TaskGuard(config.node_id, task_security_policy, now=now)
     tracker.observe_census(census)
     journal = NodeJournal(config.node_id, path=journal_path, now=now)
     agent = NodeAgent(
@@ -554,6 +557,7 @@ def build_laptop_citizen_agent(
         node_journal=journal,
         degradation_tracker=tracker,
         idle_generosity=generosity,
+        task_guard=guard,
         citizen=report,
     )
     return agent, report
