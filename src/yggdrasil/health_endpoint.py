@@ -14,8 +14,9 @@ on the fabric asks for:
   claiming it is refused here by name.
 - **load** — the numbers a router will one day place by, all
   counted or measured, none estimated: in-flight leases,
-  queue depth (0 until the local queue exists, Y-031 — the
-  report claims no queue early), sandbox active tasks and
+  queue depth (the local queue's true depth since Y-031
+  when one is wired; 0 before and unwired — the report
+  claims no queue early), sandbox active tasks and
   finished executions, and the governor's latest readings
   (thermal / memory fraction / CPU share) when a governor is
   wired. Without a governor those readings are null —

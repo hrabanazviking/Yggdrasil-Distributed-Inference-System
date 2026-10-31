@@ -22,8 +22,9 @@ shape does not change, only the carrier does.
   silent node (Y-054), and a self-report claiming it is
   refused by name at build time.
 - **Load, counted and measured** — in-flight leases, queue
-  depth (0 until the local queue exists, Y-031 — no queue is
-  claimed early), the sandbox's active tasks and finished
+  depth (the local queue's true depth since Y-031 when one
+  is wired; 0 before and unwired — no queue is claimed
+  early), the sandbox's active tasks and finished
   executions, and the governor's latest readings (thermal,
   memory fraction, CPU share). Without a governor wired
   those readings are `null`: unknown, never a calm zero
@@ -93,7 +94,8 @@ joined, alongside the status and health it already printed.
 No network server, no fabric carriage, and no peer-side
 liveness ageing (present → suspect → gone is Y-054, on
 missed beats, judged by the watcher — never by the node
-itself). No queue truth beyond the health report's 0
-(Y-031), and no hardware claim: the suite's snapshots are
+itself). No queue truth beyond the health report's own
+depth (the queue itself is Y-031; see LOCAL_QUEUE.md), and
+no hardware claim: the suite's snapshots are
 fixtures and this VM's own agent; the citizens that run
 this on named hardware are Y-033 – Y-035.

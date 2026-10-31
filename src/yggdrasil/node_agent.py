@@ -82,6 +82,18 @@ every later Part II slice hangs its machinery on:
   ``status()`` carries the sandbox's policy and its finished
   execution count. Without one wired, the agent still only
   leases, exactly as before.
+- **local queue (Y-031, grown onto the skeleton):** a
+  ``local_queue=`` handed in at construction holds tasks in
+  priority order (the task's own criticality) behind a depth
+  bound. ``queue_task`` accepts work only while joined — a
+  draining node takes no new held work, exactly as it takes
+  no new leases — and a full queue refuses by the Y-007 name
+  ``queue_full``. ``health()`` then reports the queue's true
+  depth (the Y-030 heartbeat agrees, by construction), and
+  ``execute_next_queued`` peeks the head, runs it through
+  the sandbox behind the lease, and only then takes it off
+  the queue — a refused run stays held. Without one wired,
+  queue depth stays 0, as before.
 - **health endpoint (Y-030, grown onto the skeleton):**
   ``heartbeat()`` serves the validated ``node_health`` v1
   record — liveness, lifecycle, the health report, counted
@@ -138,6 +150,7 @@ from yggdrasil.identity import (
     fingerprint,
     verify_certificate,
 )
+from yggdrasil.local_queue import QueueError
 from yggdrasil.model_lifecycle import ModelLifecycleError
 from yggdrasil.observability import LocalJsonlSink, make_event
 from yggdrasil.sandbox import SandboxError
@@ -281,6 +294,7 @@ class NodeAgent:
         model_lifecycle=None,
         governor=None,
         sandbox=None,
+        local_queue=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -315,6 +329,10 @@ class NodeAgent:
         # execute_task runs behind the lease this skeleton has
         # held since Y-021.
         self._sandbox = sandbox
+        # The local queue (Y-031): tasks held per node in
+        # priority order. When wired, health() reports its
+        # true depth and queue_task holds work for the node.
+        self._local_queue = local_queue
         self._health_endpoint: NodeHealthEndpoint | None = None
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
@@ -379,6 +397,12 @@ class NodeAgent:
         when the agent was built without one."""
         return self._sandbox
 
+    @property
+    def local_queue(self):
+        """The node's local queue (Y-031), or None when the
+        agent was built without one."""
+        return self._local_queue
+
     # -- task execution (Y-029) -----------------------------------------
 
     def execute_task(
@@ -428,6 +452,80 @@ class NodeAgent:
                     self._model_lifecycle.release(model)
             finally:
                 self.end_task(task_id)
+
+    # -- local queue (Y-031) ----------------------------------------------
+
+    def queue_task(self, task: dict) -> dict:
+        """Hold one task in the local queue (Y-031); returns
+        its validated queued-task entry. Only a joined node
+        takes new held work — a draining node sheds, it does
+        not gather. A full queue refuses by the Y-007 name
+        ``queue_full``; a duplicate id refuses by name."""
+        if self._local_queue is None:
+            raise NodeAgentError("this agent has no local queue wired")
+        self._require("queue_task", JOINED)
+        try:
+            return self._local_queue.enqueue(task)
+        except QueueError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def cancel_queued_task(self, task_id: str) -> bool:
+        """Remove one held task without serving it (Y-031).
+        False when it is not held."""
+        if self._local_queue is None:
+            raise NodeAgentError("this agent has no local queue wired")
+        self._require("cancel_queued_task", JOINED, DRAINING)
+        return self._local_queue.cancel(task_id)
+
+    def next_queued_task(self) -> dict | None:
+        """The entry at the head of the queue's service order
+        (Y-031), without taking it; None when empty."""
+        if self._local_queue is None:
+            raise NodeAgentError("this agent has no local queue wired")
+        return self._local_queue.peek()
+
+    def execute_next_queued(
+        self,
+        runner,
+        *,
+        engine: str,
+        model: str,
+        memory_bytes: int = 0,
+        cpu_share: float = 0.0,
+        on_event=None,
+    ):
+        """Serve the queue's head through the sandbox (Y-029
+        + Y-031): peek the next task, run it behind the lease
+        via :meth:`execute_task`, and only then take it off
+        the queue — so a run refused before it starts (the
+        governor, a non-resident model) leaves the task held,
+        not vanished. Returns the sandbox's triple, or None
+        when the queue is empty."""
+        if self._local_queue is None:
+            raise NodeAgentError("this agent has no local queue wired")
+        self._require("execute_next_queued", JOINED)
+        entry = self._local_queue.peek()
+        if entry is None:
+            return None
+        task = self._local_queue.held_task(entry["task_id"])
+        if task is None:  # taken by another hand between peek and fetch
+            return None
+        outcome = self.execute_task(
+            task,
+            runner,
+            engine=engine,
+            model=model,
+            memory_bytes=memory_bytes,
+            cpu_share=cpu_share,
+            on_event=on_event,
+        )
+        self._local_queue.remove(entry["task_id"])
+        return outcome
+
+    def queue_report(self) -> dict | None:
+        """The local queue's numbers (Y-031), or None when no
+        queue is wired."""
+        return self._local_queue.report() if self._local_queue is not None else None
 
     # -- model lifecycle (Y-027) ------------------------------------------
 
@@ -663,14 +761,15 @@ class NodeAgent:
 
         Models loaded comes from the model lifecycle (Y-027)
         when one is wired, and stays empty until then; queue
-        depth stays 0 until the local queue exists (Y-031) —
-        the report claims neither early. The endpoint Part III's
-        heartbeats carry is Y-030."""
+        depth is the local queue's true depth (Y-031) when one
+        is wired and stays 0 until then — the report claims
+        neither early. The endpoint Part III's heartbeats carry
+        is Y-030."""
         report: dict = {
             "node_id": self.config.node_id,
             "at": _fmt(self._now()),
             "liveness": "present" if self._state in _PRESENT_STATES else "gone",
-            "queue_depth": 0,
+            "queue_depth": len(self._local_queue) if self._local_queue is not None else 0,
             "models_loaded": (
                 self._model_lifecycle.loaded_models()
                 if self._model_lifecycle is not None
@@ -837,6 +936,7 @@ class NodeAgent:
                 if self._sandbox is not None
                 else None
             ),
+            "queue": self.queue_report(),
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,
             "census": (

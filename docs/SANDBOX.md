@@ -128,6 +128,8 @@ No OS-level isolation — this sandbox bounds the stream it
 is handed, in-process; it does not confine syscalls, files,
 or memory (tasks-are-data enforcement is Y-043; engine
 crash / OOM containment is Y-032; the local queue that feeds
-tasks in is Y-031). No hardware claim: the suite's runners
+tasks in has landed at Y-031 — see LOCAL_QUEUE.md, whose
+`execute_next_queued` serves its head through this sandbox).
+No hardware claim: the suite's runners
 are fixtures and a stub adapter, its timer injected; the
 citizens that run this on named hardware are Y-033 – Y-035.

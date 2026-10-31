@@ -1,0 +1,1 @@
+{"$id":"yggdrasil/contracts/v1/queue_policy","$schema":"https://json-schema.org/draft/2020-12/schema","additionalProperties":false,"properties":{"max_depth":{"exclusiveMinimum":0,"type":"integer"},"version":{"const":1}},"required":["version","max_depth"],"title":"QueuePolicy v1 \u2014 one node's local queue bounds (Y-031)","type":"object"}

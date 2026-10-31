@@ -96,7 +96,8 @@ the same field carries its verdict instead — its reasons, or
 both bite — and `status()` carries its last evaluated state. It deliberately claims nothing early —
 `models_loaded` comes from the model lifecycle (Y-027) when
 one is wired and is empty until then,
-`queue_depth` is 0 until the local queue exists (Y-031).
+`queue_depth` is the local queue's true depth when one is
+wired (Y-031 — see LOCAL_QUEUE.md) and 0 until then.
 
 The health endpoint has landed (Y-030): `heartbeat()` grows
 this report into the validated `node_health` v1 record —
@@ -155,7 +156,11 @@ an agent built with `sandbox=` runs tasks through
 lease for the run; see SANDBOX.md); and the health endpoint
 has landed (Y-030 — `heartbeat()` serves the `node_health`
 v1 record this skeleton's health, governor, census, and
-model facts assemble into; see HEALTH_ENDPOINT.md); no queue
-(Y-031), no fabric join (Part III), and no real hardware citizen
+model facts assemble into; see HEALTH_ENDPOINT.md); and the
+local queue has landed (Y-031 — an agent built with
+`local_queue=` holds tasks in priority order, reports the
+true depth in `health()`/`heartbeat()`, and serves the head
+through `execute_next_queued`; see LOCAL_QUEUE.md); no fabric
+join (Part III), and no real hardware citizen
 (Y-033 – Y-035). The skeleton has run in tests on this VM only;
 nothing here is a hardware claim.
