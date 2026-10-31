@@ -51,7 +51,8 @@ _SCHEMAS = _ROOT / "contracts" / "schemas"
 
 # Directories whose *.json files are mesh data and must be registered.
 # (contracts/schemas/ holds schemas, not data; fixtures in code are code.)
-DATA_DIRECTORIES = ("roles", "security", "data", "profiles", "policies")
+# "provenance" joined the list at Y-018, when its register landed.
+DATA_DIRECTORIES = ("roles", "security", "data", "profiles", "policies", "provenance")
 
 _VERSION_RE = re.compile(r"^(?P<stem>[a-z0-9][a-z0-9-]*)-v(?P<n>[0-9]+)$")
 _SCHEMA_ID_RE = re.compile(r"/v(?P<n>[0-9]+)(?:/|$)")

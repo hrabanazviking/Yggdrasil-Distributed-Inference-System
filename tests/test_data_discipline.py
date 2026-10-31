@@ -49,7 +49,12 @@ def test_all_contract_schemas_are_valid_and_versioned():
 
 def test_manifest_validates_and_covers_the_repo():
     reports = {r.id: r for r in validate_repo()}
-    assert set(reports) == {"data_manifest", "role_catalog", "threat_register"}
+    assert set(reports) == {
+        "data_manifest",
+        "role_catalog",
+        "threat_register",
+        "provenance_register",  # added by Y-018, registered in its own slice
+    }
     assert reports["role_catalog"].version == "yggdrasil-role-catalog-v1"
     assert reports["role_catalog"].items_checked == 9  # the nine worlds
     assert reports["threat_register"].items_checked >= 8
