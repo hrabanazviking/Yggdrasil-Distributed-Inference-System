@@ -1,0 +1,137 @@
+{
+ "$id": "yggdrasil/contracts/v1/transport_benchmark_result",
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "additionalProperties": false,
+ "properties": {
+  "candidate_id": {
+   "pattern": "^[a-z][a-z0-9-]{1,40}$",
+   "type": "string"
+  },
+  "chatter_bytes_per_node_minute": {
+   "additionalProperties": {
+    "minimum": 0,
+    "type": "integer"
+   },
+   "propertyNames": {
+    "pattern": "^[0-9]+$"
+   },
+   "type": "object"
+  },
+  "criterion1_partition": {
+   "additionalProperties": false,
+   "properties": {
+    "convergence_seconds_after_heal": {
+     "minimum": 0,
+     "type": "number"
+    },
+    "lost_terminal_results": {
+     "minimum": 0,
+     "type": "integer"
+    },
+    "passed": {
+     "type": "boolean"
+    },
+    "registrations_converged": {
+     "type": "boolean"
+    },
+    "terminal_results_sent": {
+     "minimum": 0,
+     "type": "integer"
+    }
+   },
+   "required": [
+    "passed",
+    "lost_terminal_results",
+    "terminal_results_sent",
+    "registrations_converged",
+    "convergence_seconds_after_heal"
+   ],
+   "type": "object"
+  },
+  "eliminated": {
+   "type": "boolean"
+  },
+  "elimination_reason": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "latency_ms": {
+   "additionalProperties": false,
+   "properties": {
+    "offer_claim_median": {
+     "minimum": 0,
+     "type": "number"
+    },
+    "offer_claim_p95": {
+     "minimum": 0,
+     "type": "number"
+    },
+    "result_median": {
+     "minimum": 0,
+     "type": "number"
+    },
+    "result_p95": {
+     "minimum": 0,
+     "type": "number"
+    }
+   },
+   "required": [
+    "offer_claim_median",
+    "offer_claim_p95",
+    "result_median",
+    "result_p95"
+   ],
+   "type": "object"
+  },
+  "simulated": {
+   "const": true
+  },
+  "tls_first_class": {
+   "type": "boolean"
+  },
+  "topology": {
+   "enum": [
+    "broker",
+    "peer-mesh"
+   ]
+  },
+  "version": {
+   "const": 1
+  },
+  "weight": {
+   "additionalProperties": false,
+   "properties": {
+    "install_size_mb_declared": {
+     "minimum": 0,
+     "type": "number"
+    },
+    "resident_memory_mb_pi_declared": {
+     "minimum": 0,
+     "type": "number"
+    }
+   },
+   "required": [
+    "install_size_mb_declared",
+    "resident_memory_mb_pi_declared"
+   ],
+   "type": "object"
+  }
+ },
+ "required": [
+  "version",
+  "candidate_id",
+  "topology",
+  "simulated",
+  "eliminated",
+  "elimination_reason",
+  "criterion1_partition",
+  "latency_ms",
+  "chatter_bytes_per_node_minute",
+  "weight",
+  "tls_first_class"
+ ],
+ "title": "TransportBenchmarkResult v1 \u2014 one candidate's Y-049 numbers: ADR-002 criterion 1 (partition correctness, the elimination gate), simulated latency, idle chatter by mesh size, declared weight, and the elimination verdict (Y-049)",
+ "type": "object"
+}

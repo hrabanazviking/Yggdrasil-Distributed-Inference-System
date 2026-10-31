@@ -1,0 +1,39 @@
+{
+ "$id": "yggdrasil/contracts/v1/transport_benchmark_policy",
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "additionalProperties": false,
+ "properties": {
+  "latency_tasks": {
+   "minimum": 1,
+   "type": "integer"
+  },
+  "node_counts": {
+   "items": {
+    "minimum": 2,
+    "type": "integer"
+   },
+   "minItems": 1,
+   "type": "array"
+  },
+  "partition_seconds": {
+   "exclusiveMinimum": 0,
+   "type": "number"
+  },
+  "terminal_results_per_node": {
+   "minimum": 1,
+   "type": "integer"
+  },
+  "version": {
+   "const": 1
+  }
+ },
+ "required": [
+  "version",
+  "latency_tasks",
+  "partition_seconds",
+  "terminal_results_per_node",
+  "node_counts"
+ ],
+ "title": "TransportBenchmarkPolicy v1 \u2014 the Y-049 race, as data: how many latency tasks, how long the partition split lasts, and at what mesh sizes idle chatter is counted (Y-049)",
+ "type": "object"
+}

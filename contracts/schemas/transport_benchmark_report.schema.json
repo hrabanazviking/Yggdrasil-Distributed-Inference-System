@@ -1,0 +1,57 @@
+{
+ "$id": "yggdrasil/contracts/v1/transport_benchmark_report",
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "additionalProperties": false,
+ "properties": {
+  "at": {
+   "format": "date-time",
+   "type": "string"
+  },
+  "chosen": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "criteria_order": {
+   "items": {
+    "minLength": 1,
+    "type": "string"
+   },
+   "minItems": 1,
+   "type": "array"
+  },
+  "decision_basis": {
+   "minLength": 1,
+   "type": "string"
+  },
+  "policy": {
+   "$ref": "transport_benchmark_policy.schema.json"
+  },
+  "results": {
+   "items": {
+    "$ref": "transport_benchmark_result.schema.json"
+   },
+   "minItems": 1,
+   "type": "array"
+  },
+  "simulated": {
+   "const": true
+  },
+  "version": {
+   "const": 1
+  }
+ },
+ "required": [
+  "version",
+  "at",
+  "simulated",
+  "policy",
+  "results",
+  "criteria_order",
+  "chosen",
+  "decision_basis"
+ ],
+ "title": "TransportBenchmarkReport v1 \u2014 ADR-002 executed: every candidate's result, the criteria in the ADR's own order, and the chosen transport the record decided (Y-049)",
+ "type": "object"
+}
