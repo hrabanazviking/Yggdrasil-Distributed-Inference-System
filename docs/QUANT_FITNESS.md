@@ -116,7 +116,10 @@ question for the registry's graded speeds, Part IV); the
 node journal has landed (Y-039 — see NODE_JOURNAL.md; it
 journals runs, it does not judge them, and a load this
 judge refuses before the loader is a refusal, not a run,
-so it is not journaled); no graceful degradation on
-accelerator loss (Y-040 — its census refresh will feed
-this same judge through the callable census seam), and
-no router enforcement (Part IV).
+so it is not journaled); graceful degradation on
+accelerator loss has landed (Y-040 — see
+DEGRADATION.md; its resident-impact judgement reads
+this slice's format table from the policy file, and a
+CPU-fallback resident re-placed by the agent is judged
+by this same judge at its load, through the lifecycle),
+and no router enforcement (Part IV).

@@ -88,6 +88,7 @@ from jsonschema import validators
 from referencing import Registry, Resource
 
 from yggdrasil.census import CensusCollector, validate_census
+from yggdrasil.degradation import DegradationTracker
 from yggdrasil.failure_shapes import FailureMonitor
 from yggdrasil.governor import ResourceGovernor
 from yggdrasil.governor import validate_policy as validate_governor_policy
@@ -502,6 +503,8 @@ def build_vm_citizen_agent(
         now=now,
         simulated=simulated,
     )
+    tracker = DegradationTracker(config.node_id, now=now)
+    tracker.observe_census(census)
     journal = NodeJournal(config.node_id, path=journal_path, now=now)
     agent = NodeAgent(
         config,
@@ -518,6 +521,7 @@ def build_vm_citizen_agent(
         model_fetcher=fetcher,
         quant_fitness=fitness,
         node_journal=journal,
+        degradation_tracker=tracker,
         citizen=report,
     )
     return agent, report

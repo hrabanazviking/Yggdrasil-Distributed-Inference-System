@@ -161,6 +161,24 @@ every later Part II slice hangs its machinery on:
   ``journal_report()`` read the book back and ``status()``
   carries the report. Without one wired, the agent keeps no
   book, exactly as before.
+- **graceful degradation (Y-040, grown onto the skeleton):**
+  a ``degradation_tracker=`` handed in at construction is
+  the node's degradation ledger (``yggdrasil.degradation``):
+  every ``refresh_census()`` feeds the fresh census to it,
+  with the lifecycle's resident records and the store's
+  entries, so a lost accelerator is declared — baseline vs
+  present, lost kinds named, CPU-only service stated — in
+  the refresh result and in ``status()``. When the fresh
+  state is degraded and a lifecycle is wired, the agent
+  acts on the assessment: CPU-fallback residents are
+  re-placed into the system pool, stranded residents that
+  are not in use are unloaded, and in-use residents are
+  left running and named — the acts ride in the refresh
+  result's ``degradation_acts``, failures named, never
+  hidden. ``degradation_state()`` / ``degradation_report()``
+  read the ledger back. Without one wired, the agent
+  refreshes its census exactly as before and declares no
+  degradation it never judged.
 - **observability:** every lifecycle move is recorded as a
   Y-013 EventEnvelope from the ``node_agent`` component (the
   first real emitter in the tree), and written to the config's
@@ -192,6 +210,7 @@ from referencing import Registry, Resource
 
 from yggdrasil import __version__
 from yggdrasil.census import CensusCollector, census_fingerprint
+from yggdrasil.degradation import DegradationError
 from yggdrasil.failure_shapes import FailureError
 from yggdrasil.governor import GovernorError
 from yggdrasil.health_endpoint import HealthError, NodeHealthEndpoint
@@ -357,6 +376,7 @@ class NodeAgent:
         model_fetcher=None,
         quant_fitness=None,
         node_journal=None,
+        degradation_tracker=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -420,6 +440,12 @@ class NodeAgent:
         # wired, execute_task journals every finished run and
         # status() carries its report.
         self._node_journal = node_journal
+        # The degradation tracker (Y-040): the node's ledger
+        # of accelerator loss — baseline vs present, lost kinds
+        # named, reduced capability declared. When wired, every
+        # census refresh is judged by it and status() carries
+        # its state.
+        self._degradation_tracker = degradation_tracker
         self._health_endpoint: NodeHealthEndpoint | None = None
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
@@ -519,6 +545,12 @@ class NodeAgent:
         """The node's journal (Y-039), or None when the agent
         was built without one."""
         return self._node_journal
+
+    @property
+    def degradation_tracker(self):
+        """The node's degradation tracker (Y-040), or None
+        when the agent was built without one."""
+        return self._degradation_tracker
 
     # -- failure shapes (Y-032) -------------------------------------------
 
@@ -738,6 +770,78 @@ class NodeAgent:
         nothing."""
         return self._node_journal.report() if self._node_journal is not None else None
 
+    # -- graceful degradation (Y-040) --------------------------------------
+
+    def degradation_state(self) -> dict | None:
+        """The degradation ledger's current state (Y-040), or
+        None when no tracker is wired — judging no loss,
+        claiming no resilience."""
+        return (
+            self._degradation_tracker.state()
+            if self._degradation_tracker is not None
+            else None
+        )
+
+    def degradation_report(self) -> dict | None:
+        """The degradation ledger's report (Y-040) — every
+        transition declared — or None when no tracker is
+        wired."""
+        return (
+            self._degradation_tracker.report()
+            if self._degradation_tracker is not None
+            else None
+        )
+
+    def _apply_degradation(self, state: dict) -> dict:
+        """Act on a fresh degradation assessment (Y-040)
+        through the model lifecycle: CPU-fallback residents
+        are re-placed into the system pool, stranded
+        residents that are not in use are unloaded, and
+        in-use residents are left running — a task's model is
+        never yanked from under it. Every act, deferral, and
+        failure is named in the returned record."""
+        acts: dict = {
+            "replaced_to_cpu": [],
+            "unloaded_stranded": [],
+            "deferred_in_use": [],
+            "failures": [],
+        }
+        if self._model_lifecycle is None or not state["status"].startswith("degraded"):
+            return acts
+        impact = state["residents"]
+        in_use_names = set(impact["stranded_in_use"])
+        for name in impact["cpu_fallback"]:
+            try:
+                resident = self._model_lifecycle.resident(name)
+            except ModelLifecycleError:
+                continue  # not resident anymore — nothing to move
+            if resident["in_use"] > 0:
+                acts["deferred_in_use"].append(name)
+                continue
+            try:
+                self._model_lifecycle.unload(name)
+                self._model_lifecycle.load(name, placement="system")
+                acts["replaced_to_cpu"].append(name)
+            except ModelLifecycleError:
+                acts["failures"].append(name)
+        for name in impact["stranded"]:
+            if name in in_use_names:
+                acts["deferred_in_use"].append(name)
+                continue
+            try:
+                resident = self._model_lifecycle.resident(name)
+            except ModelLifecycleError:
+                continue
+            if resident["in_use"] > 0:
+                acts["deferred_in_use"].append(name)
+                continue
+            try:
+                self._model_lifecycle.unload(name)
+                acts["unloaded_stranded"].append(name)
+            except ModelLifecycleError:
+                acts["failures"].append(name)
+        return acts
+
     # -- model lifecycle (Y-027) ------------------------------------------
 
     def load_model(self, name: str, **kwargs) -> dict:
@@ -796,7 +900,29 @@ class NodeAgent:
                 "node.census_changed",
                 {"changed_fields": list(changed), "fabric_connected": False},
             )
-        return {"census": census, "changed_fields": list(changed)}
+        result: dict = {"census": census, "changed_fields": list(changed)}
+        if self._degradation_tracker is not None:
+            # Y-040: the fresh census is judged against the
+            # node's baseline the moment it is measured — a
+            # lost accelerator is declared here, with the
+            # resident impact assessed from the lifecycle's
+            # own records and the store's own entries, and
+            # the resident acts taken through the lifecycle.
+            residents = (
+                self._model_lifecycle.report()["loaded"]
+                if self._model_lifecycle is not None
+                else []
+            )
+            entries = self._model_store.entries() if self._model_store is not None else []
+            try:
+                dstate = self._degradation_tracker.observe_census(
+                    census, residents=residents, store_entries=entries
+                )
+            except DegradationError as exc:
+                raise NodeAgentError(str(exc)) from exc
+            result["degradation"] = dstate
+            result["degradation_acts"] = self._apply_degradation(dstate)
+        return result
 
     # -- internals ------------------------------------------------------
 
@@ -1152,6 +1278,7 @@ class NodeAgent:
             "model_fetch": self.fetch_report(),
             "quant_fitness": self.quant_fitness_summary(),
             "journal": self.journal_report(),
+            "degradation": self.degradation_state(),
             "citizen": self._citizen,
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,

@@ -215,6 +215,16 @@ stdlib module for scripts run from that directory.)
   by default, or the durable JSONL file when the factory is
   handed `journal_path=` — and `status()` carries its
   report under `journal` (see NODE_JOURNAL.md).
+- Graceful degradation (Y-040) is wired by this factory:
+  the agent carries a `degradation_tracker=` whose
+  baseline is this factory's measured census — the
+  laptop citizen opens `full` with its measured CUDA
+  baseline; if a later census refresh measures the GPU
+  gone, the loss is declared `degraded_cpu_only`,
+  CPU-fallback residents are re-placed into the system
+  pool, and stranded residents are unloaded or deferred
+  by name (see DEGRADATION.md). No real GPU loss has
+  been staged on purplelongship — NOT PROVEN there.
 
 - No systemd service is installed on purplelongship by
   this slice: enabling `deploy/yggdrasil-node.service`

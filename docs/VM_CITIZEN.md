@@ -214,6 +214,12 @@ and refusing under real load*.
   by default, or the durable JSONL file when the factory is
   handed `journal_path=` — and `status()` carries its
   report under `journal` (see NODE_JOURNAL.md).
+- Graceful degradation (Y-040) is wired by this factory:
+  the agent carries a `degradation_tracker=` whose
+  baseline is this factory's measured census — the VM
+  citizen opens `cpu_only_by_design` (this VM's census
+  is CPU-only by the citizen's own gate; that is its
+  design, not a loss) (see DEGRADATION.md).
 
 - No systemd service is installed on this VM by this
   slice: enabling `deploy/yggdrasil-node.service` here

@@ -195,6 +195,14 @@ landed (Y-039 — an agent built with `node_journal=`
 journals every finished `execute_task` run from its own
 records, reads the book back via `journal_entries()` /
 `journal_report()`, and carries the report in `status()`
-under `journal`; see NODE_JOURNAL.md); no fabric
+under `journal`; see NODE_JOURNAL.md); and graceful
+degradation has landed (Y-040 — an agent built with
+`degradation_tracker=` judges every census refresh
+against its baseline: a lost accelerator is declared
+in the refresh result and in `status()` under
+`degradation`, CPU-fallback residents are re-placed
+into the system pool, stranded residents not in use
+are unloaded, in-use residents are deferred and named;
+see DEGRADATION.md); no fabric
 join (Part III). The skeleton has run in tests on this VM only;
 nothing here is a hardware claim.

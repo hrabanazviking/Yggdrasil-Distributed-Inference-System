@@ -168,6 +168,13 @@ The citizen's own 12 tests pass on ARM (6.05 s) as on the VM.
   by default, or the durable JSONL file when the factory is
   handed `journal_path=` — and `status()` carries its
   report under `journal` (see NODE_JOURNAL.md).
+- Graceful degradation (Y-040) is wired by this factory:
+  the agent carries a `degradation_tracker=` whose
+  baseline is this factory's measured census — the Pi
+  citizen opens `cpu_only_by_design` (Mimir measured no
+  accelerator; that is its design, not a loss), and any
+  accelerator a future Pi census gains and then loses
+  would be declared by name (see DEGRADATION.md).
 
 - No systemd service is installed on Mimir by this slice:
   enabling `deploy/yggdrasil-node.service` there stays the
