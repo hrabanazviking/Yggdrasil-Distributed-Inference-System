@@ -3,9 +3,11 @@
 *Part II opens: every device a citizen. This slice is the
 skeleton each citizen wears — identity, config, and lifecycle —
 in `src/yggdrasil/node_agent.py`. The capability census (Y-022),
-the engine adapters (Y-023 – Y-025), execution (Y-029), the
-health endpoint (Y-030), and the queue (Y-031) hang on this frame
-as their own slices; none of them is claimed here.*
+the engine adapters (Y-023 – Y-025), execution (Y-029), and
+the queue (Y-031) hang on this frame as their own slices; the
+health endpoint has landed on it (Y-030 — `heartbeat()` /
+`handle_health`, see HEALTH_ENDPOINT.md); none of the rest is
+claimed here.*
 
 ## Identity first (Y-011, enforced at start)
 
@@ -94,8 +96,15 @@ the same field carries its verdict instead — its reasons, or
 both bite — and `status()` carries its last evaluated state. It deliberately claims nothing early —
 `models_loaded` comes from the model lifecycle (Y-027) when
 one is wired and is empty until then,
-`queue_depth` is 0 until the local queue exists (Y-031), and
-the heartbeat-carrying endpoint is Y-030.
+`queue_depth` is 0 until the local queue exists (Y-031).
+
+The health endpoint has landed (Y-030): `heartbeat()` grows
+this report into the validated `node_health` v1 record —
+liveness, counted load, resident/present models, the
+governor's full state, census fingerprint, uptime, and a
+monotonic beat sequence — and `handle_health` answers it
+in-process (200 while present, 503 while gone); see
+HEALTH_ENDPOINT.md. Carriage on the fabric is Part III.
 
 `status()` is the agent's local summary: lifecycle state, the
 verified identity (once started), key fingerprint, custody,
@@ -143,7 +152,10 @@ memory, or CPU ceilings and reports the verdict in
 `health()`/`status()`); and task execution has landed (Y-029 —
 an agent built with `sandbox=` runs tasks through
 `execute_task`, behind the lease and holding the model's use
-lease for the run; see SANDBOX.md); no heartbeat endpoint (Y-030), no queue
+lease for the run; see SANDBOX.md); and the health endpoint
+has landed (Y-030 — `heartbeat()` serves the `node_health`
+v1 record this skeleton's health, governor, census, and
+model facts assemble into; see HEALTH_ENDPOINT.md); no queue
 (Y-031), no fabric join (Part III), and no real hardware citizen
 (Y-033 – Y-035). The skeleton has run in tests on this VM only;
 nothing here is a hardware claim.

@@ -90,8 +90,9 @@ health keeps only drain's shedding flag, exactly as before.
 The task sandbox has landed (Y-029 — it runs behind this
 door: `execute_task` takes the lease, this governor's
 admission rides inside it, and the run holds the lifecycle's
-use leases), no health endpoint (Y-030
-carries this verdict to the fabric), and no hardware claim:
+use leases), and the health endpoint has landed (Y-030 —
+this verdict rides every heartbeat in full, as
+`governor_state`; see HEALTH_ENDPOINT.md), and no hardware claim:
 the suite's readings are injected fixtures, and the one real
 reading taken — this VM's, by `system_readings()` in tests —
 reports its thermal honestly unknown. Acting on real heat on

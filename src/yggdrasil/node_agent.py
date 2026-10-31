@@ -82,6 +82,20 @@ every later Part II slice hangs its machinery on:
   ``status()`` carries the sandbox's policy and its finished
   execution count. Without one wired, the agent still only
   leases, exactly as before.
+- **health endpoint (Y-030, grown onto the skeleton):**
+  ``heartbeat()`` serves the validated ``node_health`` v1
+  record — liveness, lifecycle, the health report, counted
+  load, resident/present models, the governor's full state,
+  census measured/fingerprint, and uptime — through
+  ``yggdrasil.health_endpoint``, the shape Part III's
+  heartbeats will carry (``fabric_connected`` still False,
+  transport still local-only: the endpoint is a local
+  handler, no socket is opened here). ``handle_health``
+  answers ``(method, path)`` in-process — 200 while present,
+  503 while gone, 404/405 named — and every heartbeat is
+  recorded as a ``node.heartbeat`` Y-013 event (counts and
+  names only). ``status()`` carries the endpoint's beat
+  count and last sequence number.
 - **observability:** every lifecycle move is recorded as a
   Y-013 EventEnvelope from the ``node_agent`` component (the
   first real emitter in the tree), and written to the config's
@@ -112,8 +126,9 @@ from jsonschema import validators
 from referencing import Registry, Resource
 
 from yggdrasil import __version__
-from yggdrasil.census import CensusCollector
+from yggdrasil.census import CensusCollector, census_fingerprint
 from yggdrasil.governor import GovernorError
+from yggdrasil.health_endpoint import HealthError, NodeHealthEndpoint
 from yggdrasil.identity import (
     ROOT_NODE_ID,
     IdentityError,
@@ -300,6 +315,7 @@ class NodeAgent:
         # execute_task runs behind the lease this skeleton has
         # held since Y-021.
         self._sandbox = sandbox
+        self._health_endpoint: NodeHealthEndpoint | None = None
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
         self._identity: dict | None = None
@@ -677,6 +693,115 @@ class NodeAgent:
             }
         return _validate(_HEALTH_VALIDATOR, report, "health report")
 
+    # -- health endpoint (Y-030) ------------------------------------------
+
+    @property
+    def health_endpoint(self) -> NodeHealthEndpoint:
+        """This node's health endpoint (Y-030), built lazily:
+        constructing it serves no heartbeat and measures
+        nothing — beats happen only when asked."""
+        if self._health_endpoint is None:
+            self._health_endpoint = NodeHealthEndpoint(
+                self.config.node_id,
+                self._health_snapshot,
+                on_heartbeat=self._record_heartbeat,
+            )
+        return self._health_endpoint
+
+    def _record_heartbeat(self, beat: dict) -> None:
+        self._emit(
+            "node.heartbeat",
+            {
+                "seq": beat["seq"],
+                "liveness": beat["liveness"],
+                "lifecycle_state": beat["lifecycle_state"],
+                "in_flight": beat["load"]["in_flight"],
+                "queue_depth": beat["load"]["queue_depth"],
+                "models_loaded_count": len(beat["models"]["loaded"]),
+                "fabric_connected": False,
+            },
+        )
+
+    def _health_snapshot(self) -> dict:
+        """The node's present component records, assembled
+        from exactly the components wired into this agent —
+        nothing is measured for the occasion beyond the
+        governor's own evaluation and the model store's
+        re-hash (its ask-time measurement, Y-026)."""
+        health = self.health()
+        governor_state = None
+        readings: dict = {"thermal_c": None, "memory_fraction": None, "cpu_share_used": None}
+        if self._governor is not None:
+            try:
+                governor_state = self._governor.evaluate()
+            except GovernorError as exc:
+                raise NodeAgentError(str(exc)) from exc
+            readings = governor_state["readings"]
+        if self._model_store is not None:
+            models_present: list[str] | None = self._model_store.present_models()
+        elif self._census_collector is not None and self._census_collector.current is not None:
+            models_present = list(self._census_collector.current.get("models_present", []))
+        else:
+            models_present = None
+        census_now = (
+            self._census_collector.current if self._census_collector is not None else None
+        )
+        uptime = None
+        if self._state in _PRESENT_STATES and self._started_at is not None:
+            uptime = max(0.0, (self._now() - self._started_at).total_seconds())
+        return {
+            "lifecycle_state": self._state,
+            "health": health,
+            "load": {
+                "in_flight": len(self._in_flight),
+                "queue_depth": health["queue_depth"],
+                "active_tasks": (
+                    len(self._sandbox.active_task_ids)
+                    if self._sandbox is not None
+                    else len(self._in_flight)
+                ),
+                "executions": (
+                    len(self._sandbox.reports) if self._sandbox is not None else 0
+                ),
+                "thermal_c": readings["thermal_c"],
+                "memory_fraction": readings["memory_fraction"],
+                "cpu_share_used": readings["cpu_share_used"],
+            },
+            "models": {
+                "loaded": list(health["models_loaded"]),
+                "present": models_present,
+                "loader_simulated": (
+                    self._model_lifecycle.loader_simulated
+                    if self._model_lifecycle is not None
+                    else None
+                ),
+            },
+            "governor_state": governor_state,
+            "census": {
+                "measured": census_now is not None,
+                "measured_at": census_now["measured_at"] if census_now else None,
+                "fingerprint": census_fingerprint(census_now) if census_now else None,
+            },
+            "uptime_seconds": uptime,
+        }
+
+    def heartbeat(self) -> dict:
+        """Serve one heartbeat (Y-030): the validated
+        node_health v1 record Part III's fabric will carry."""
+        try:
+            return self.health_endpoint.heartbeat()
+        except HealthError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def handle_health(self, method: str, path: str) -> tuple[int, dict]:
+        """Answer one health request in-process (Y-030):
+        ``(status, body)`` — no socket is opened; a transport
+        (Part III) binds to this seam later."""
+        try:
+            return self.health_endpoint.handle(method, path)
+        except HealthError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
     def status(self) -> dict:
         """The agent's local summary — not a contract shape; the
         contract shapes are identity, health, and events."""
@@ -695,6 +820,14 @@ class NodeAgent:
                 else []
             ),
             "governor": self._governor.last_state if self._governor is not None else None,
+            "health_endpoint": {
+                "beats": self._health_endpoint.beats if self._health_endpoint else 0,
+                "last_seq": (
+                    self._health_endpoint.last["seq"]
+                    if self._health_endpoint is not None and self._health_endpoint.last
+                    else None
+                ),
+            },
             "sandbox": (
                 {
                     "policy": self._sandbox.policy,
@@ -728,9 +861,16 @@ def _run_check(agent: NodeAgent) -> int:
     agent.start()
     agent.join()
     health = agent.health()
+    heartbeat = agent.heartbeat()
     agent.drain()
     status = agent.stop()
-    print(json.dumps({"status": status, "health": health}, indent=2, sort_keys=True))
+    print(
+        json.dumps(
+            {"status": status, "health": health, "heartbeat": heartbeat},
+            indent=2,
+            sort_keys=True,
+        )
+    )
     return 0
 
 
