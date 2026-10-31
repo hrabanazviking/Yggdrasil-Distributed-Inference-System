@@ -38,6 +38,12 @@ every later Part II slice hangs its machinery on:
   loaded stays empty until engines land (Y-023 onward) and queue
   depth stays 0 until the local queue exists (Y-031) — the
   report claims neither early.
+- **census (Y-022, grown onto the skeleton):** ``census()``
+  answers the node's measured CapabilityCensus through
+  ``yggdrasil.census`` (probe-measured, never assumed), and
+  ``refresh_census()`` re-measures and records a
+  ``node.census_changed`` event naming the fields that changed.
+  The skeleton itself measures nothing until asked.
 - **observability:** every lifecycle move is recorded as a
   Y-013 EventEnvelope from the ``node_agent`` component (the
   first real emitter in the tree), and written to the config's
@@ -68,6 +74,7 @@ from jsonschema import validators
 from referencing import Registry, Resource
 
 from yggdrasil import __version__
+from yggdrasil.census import CensusCollector
 from yggdrasil.identity import (
     ROOT_NODE_ID,
     IdentityError,
@@ -211,10 +218,17 @@ class NodeAgent:
         *,
         key_store: LocalKeyStore | None = None,
         now=None,
+        census_probes=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
         self._now = now or (lambda: datetime.now(UTC))
+        # The capability census (Y-022): measured by probes the
+        # caller may inject (tests, odd hardware); the collector
+        # is built lazily so constructing an agent never measures
+        # a machine nobody asked about yet.
+        self._census_probes = census_probes
+        self._census_collector: CensusCollector | None = None
         self._state = CREATED
         self._identity: dict | None = None
         self._fingerprint: str | None = None
@@ -252,6 +266,38 @@ class NodeAgent:
     def custody(self) -> dict:
         """Where this node's keys live, in Y-011's own words."""
         return describe_custody()
+
+    # -- census (Y-022) -------------------------------------------------
+
+    def _collector(self) -> CensusCollector:
+        if self._census_collector is None:
+            self._census_collector = CensusCollector(
+                self.config.node_id, probes=self._census_probes, now=self._now
+            )
+        return self._census_collector
+
+    def census(self) -> dict:
+        """This node's measured CapabilityCensus (Y-022): the
+        current one, measured on first asking. Values are probe
+        readings, never assumptions, and accelerator entries
+        carry ``proven: False`` — detection is not proof."""
+        collector = self._collector()
+        return collector.current if collector.current is not None else collector.measure()
+
+    def refresh_census(self) -> dict:
+        """Re-measure the census; return it with the names of
+        the fields that changed. A real change (not the first
+        measurement, not a no-change refresh) is recorded as a
+        ``node.census_changed`` Y-013 event, so the node's own
+        ledger — and later the fabric — learns the machine
+        changed, in field names."""
+        census, changed = self._collector().refresh()
+        if changed and changed != ("initial",):
+            self._emit(
+                "node.census_changed",
+                {"changed_fields": list(changed), "fabric_connected": False},
+            )
+        return {"census": census, "changed_fields": list(changed)}
 
     # -- internals ------------------------------------------------------
 
@@ -436,6 +482,11 @@ class NodeAgent:
             "in_flight": sorted(self._in_flight),
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,
+            "census": (
+                self._census_collector.current
+                if self._census_collector is not None
+                else None
+            ),
             "fabric_connected": False,
             "transport": TRANSPORT,
             "simulated": False,
