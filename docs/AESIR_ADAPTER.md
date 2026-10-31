@@ -86,8 +86,10 @@ catalog listing is not hash proof, and Aesir's `model_digest`
 is carried as provenance data, not yet verified against
 on-disk bytes by this mesh), model load/unload slots
 (Y-027), bounded task execution (Y-029), the adapter
-conformance kit (Y-046 — the gate every adapter, this one
-included, must pass), Aesir's Ollama-mode surface as a
+conformance kit has landed as its own slice (Y-046 — the
+gate every adapter, this one included, must pass; this
+adapter passes it in the kit's own suite, over a fake
+transport, SIMULATED), Aesir's Ollama-mode surface as a
 separate citizen view (the Ollama adapter, Y-023, already
 speaks that wire shape against Ollama itself), and any
 fabric carriage of results (Part III).

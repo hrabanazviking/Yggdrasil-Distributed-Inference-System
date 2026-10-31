@@ -105,5 +105,7 @@ before.
   could both serve a model is Part IV (Verðandi). This host
   routes only on stated facts — an explicit name, an
   assignment, a single listing.
-- The conformance kit every new adapter must pass is Y-046;
-  the mixed-engine soak is Y-047.
+- The conformance kit every new adapter must pass landed
+  in Y-046 (`docs/CONFORMANCE.md`) — all three adapters this
+  host holds pass it in the kit's own suite; the
+  mixed-engine soak is Y-047.

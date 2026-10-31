@@ -191,6 +191,8 @@ not driven), llama.cpp's native `/completion`, `/props`,
 and `/embedding` routes (the OpenAI-compatible shape is the
 contract this adapter wraps; native-only surfaces are a
 future slice's word, if ever), the adapter conformance kit
-(Y-046 — the gate every adapter, this one included, must
-pass before joining a mesh), and any fabric carriage of
+has landed as its own slice (Y-046 — the gate every adapter,
+this one included, must pass before joining a mesh; both
+flavours pass it in the kit's own suite, over fake
+transports, SIMULATED), and any fabric carriage of
 results (Part III).

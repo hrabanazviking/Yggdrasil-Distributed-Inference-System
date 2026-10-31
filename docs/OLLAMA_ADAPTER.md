@@ -131,6 +131,8 @@ Y-026 — `list_models()` here
 is Ollama's word, not hash proof), model load/unload slots
 (Y-027), bounded task execution (Y-029 — this adapter runs
 what it is handed; the sandbox is its own slice), the adapter
-conformance kit (Y-046 — the gate every adapter, this one
-included, must pass before joining a mesh), and any fabric
+conformance kit has landed as its own slice (Y-046 — the
+gate every adapter, this one included, must pass before
+joining a mesh; this adapter passes it in the kit's own
+suite, over a fake transport, SIMULATED), and any fabric
 carriage of results (Part III).
