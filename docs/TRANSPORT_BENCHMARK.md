@@ -85,7 +85,9 @@ conformance kit, exactly as ADR-002 promised.
 ## Not built here
 
 - The fabric itself — publish/subscribe and direct channels over
-  the chosen gossip transport — is Y-050.
+  the chosen gossip transport — is built at Y-050
+  (`docs/FABRIC.md`): the in-process core of this slice's winning
+  candidate, store-and-forward outbox and all.
 - TLS carriage of the gossip channels is Y-051; discovery Y-052;
   gossip of registry/health state as a service Y-055 (this slice's
   anti-entropy is the benchmark's miniature, not the service).
