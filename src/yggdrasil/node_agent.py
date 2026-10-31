@@ -179,6 +179,19 @@ every later Part II slice hangs its machinery on:
   read the ledger back. Without one wired, the agent
   refreshes its census exactly as before and declares no
   degradation it never judged.
+- **idle generosity (Y-041, grown onto the skeleton):** an
+  ``idle_generosity=`` handed in at construction is the node's
+  generosity ledger (``yggdrasil.idle_generosity``).
+  ``generosity_advertisement()`` evaluates it fresh from the
+  agent's own present facts — lifecycle state, in-flight
+  leases, the local queue's report, the governor's verdict
+  and readings, the lifecycle's free slots, the latest
+  census's measured accelerator kinds, and the models
+  loaded — so an idle node advertises spare capacity and a
+  busy one withdraws it, reasons named, in the same call.
+  ``generosity_report()`` reads the ledger back and
+  ``status()`` carries the last advertisement. Without one
+  wired, the agent advertises nothing, exactly as before.
 - **observability:** every lifecycle move is recorded as a
   Y-013 EventEnvelope from the ``node_agent`` component (the
   first real emitter in the tree), and written to the config's
@@ -223,6 +236,7 @@ from yggdrasil.identity import (
     fingerprint,
     verify_certificate,
 )
+from yggdrasil.idle_generosity import GenerosityError
 from yggdrasil.local_queue import QueueError
 from yggdrasil.model_fetch import ModelFetchError
 from yggdrasil.model_lifecycle import ModelLifecycleError
@@ -377,6 +391,7 @@ class NodeAgent:
         quant_fitness=None,
         node_journal=None,
         degradation_tracker=None,
+        idle_generosity=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -446,6 +461,11 @@ class NodeAgent:
         # census refresh is judged by it and status() carries
         # its state.
         self._degradation_tracker = degradation_tracker
+        # The idle-generosity ledger (Y-041): present-tense
+        # spare-capacity advertisements, evaluated fresh from
+        # the agent's own load facts on every asking. When
+        # wired, status() carries the last advertisement.
+        self._idle_generosity = idle_generosity
         self._health_endpoint: NodeHealthEndpoint | None = None
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
@@ -791,6 +811,82 @@ class NodeAgent:
             if self._degradation_tracker is not None
             else None
         )
+
+    # -- idle generosity (Y-041) -------------------------------------------
+
+    @property
+    def idle_generosity(self):
+        """The node's idle-generosity ledger (Y-041), or None
+        when none is wired."""
+        return self._idle_generosity
+
+    def generosity_advertisement(self) -> dict | None:
+        """Evaluate the node's generosity *now* (Y-041): the
+        validated spare_capacity v1 advertisement built from
+        the agent's own present facts, or None when no ledger
+        is wired — an unwired node advertises nothing. The
+        governor is asked for its verdict (its readings carry
+        the memory and CPU figures); the queue and lifecycle
+        reports give depths and free slots; the latest census,
+        when one has been measured, gives the accelerator
+        kinds the spare rides on — present kinds, never the
+        degradation baseline."""
+        if self._idle_generosity is None:
+            return None
+        readings: dict = {
+            "memory_total_bytes": None,
+            "memory_used_bytes": None,
+            "cpu_share_used": None,
+        }
+        shedding = False
+        if self._governor is not None:
+            try:
+                verdict = self._governor.evaluate()
+            except GovernorError as exc:
+                raise NodeAgentError(str(exc)) from exc
+            shedding = bool(verdict["shedding"])
+            readings = verdict["readings"]
+        queue_free = None
+        if self._local_queue is not None:
+            queue_free = self._local_queue.report()["free_slots"]
+        slots_free = None
+        if self._model_lifecycle is not None:
+            report = self._model_lifecycle.report()
+            slots_free = report["budgets"]["max_slots"] - report["used"]["slots"]
+        accelerators: list[str] = []
+        if self._census_collector is not None and self._census_collector.current:
+            accelerators = [
+                entry["kind"]
+                for entry in self._census_collector.current.get("accelerators", [])
+                if entry.get("kind") != "none"
+            ]
+        load = {
+            "lifecycle_state": self._state,
+            "in_flight": len(self._in_flight),
+            "queue_depth": len(self._local_queue) if self._local_queue is not None else 0,
+            "queue_free_slots": queue_free,
+            "model_slots_free": slots_free,
+            "governor_shedding": shedding,
+            "memory_total_bytes": readings["memory_total_bytes"],
+            "memory_used_bytes": readings["memory_used_bytes"],
+            "cpu_share_used": readings["cpu_share_used"],
+            "accelerators": accelerators,
+            "models_loaded": (
+                self._model_lifecycle.loaded_models()
+                if self._model_lifecycle is not None
+                else []
+            ),
+        }
+        try:
+            return self._idle_generosity.evaluate(load)
+        except GenerosityError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def generosity_report(self) -> dict | None:
+        """The generosity ledger's report (Y-041) — every
+        transition, reasons named — or None when no ledger
+        is wired."""
+        return self._idle_generosity.report() if self._idle_generosity is not None else None
 
     def _apply_degradation(self, state: dict) -> dict:
         """Act on a fresh degradation assessment (Y-040)
@@ -1279,6 +1375,9 @@ class NodeAgent:
             "quant_fitness": self.quant_fitness_summary(),
             "journal": self.journal_report(),
             "degradation": self.degradation_state(),
+            "generosity": (
+                self._idle_generosity.current() if self._idle_generosity is not None else None
+            ),
             "citizen": self._citizen,
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,

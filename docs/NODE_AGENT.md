@@ -203,6 +203,12 @@ in the refresh result and in `status()` under
 `degradation`, CPU-fallback residents are re-placed
 into the system pool, stranded residents not in use
 are unloaded, in-use residents are deferred and named;
-see DEGRADATION.md); no fabric
+see DEGRADATION.md); and idle generosity has landed
+(Y-041 — an agent built with `idle_generosity=` evaluates
+its spare capacity fresh from its own present facts via
+`generosity_advertisement()`: idle advertises, busy
+withdraws with reasons named, and `status()` carries the
+last advertisement under `generosity`; see
+IDLE_GENEROSITY.md); no fabric
 join (Part III). The skeleton has run in tests on this VM only;
 nothing here is a hardware claim.

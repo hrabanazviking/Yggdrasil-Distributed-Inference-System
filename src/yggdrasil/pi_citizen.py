@@ -84,6 +84,7 @@ from yggdrasil.degradation import DegradationTracker
 from yggdrasil.failure_shapes import FailureMonitor
 from yggdrasil.governor import ResourceGovernor
 from yggdrasil.governor import validate_policy as validate_governor_policy
+from yggdrasil.idle_generosity import IdleGenerosity
 from yggdrasil.local_queue import LocalQueue
 from yggdrasil.model_fetch import ModelFetcher
 from yggdrasil.model_lifecycle import ModelLifecycle, budgets_from_census
@@ -439,6 +440,7 @@ def build_pi_citizen_agent(
         simulated=simulated,
     )
     tracker = DegradationTracker(config.node_id, now=now)
+    generosity = IdleGenerosity(config.node_id, now=now)
     tracker.observe_census(census)
     journal = NodeJournal(config.node_id, path=journal_path, now=now)
     agent = NodeAgent(
@@ -456,6 +458,7 @@ def build_pi_citizen_agent(
         quant_fitness=fitness,
         node_journal=journal,
         degradation_tracker=tracker,
+        idle_generosity=generosity,
         citizen=report,
     )
     return agent, report
