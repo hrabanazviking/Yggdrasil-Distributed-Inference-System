@@ -188,6 +188,12 @@ like the other citizens'.
   peer has carried a model for this tree yet; see
   MODEL_FETCH.md).
 
+- Quantisation fitness (Y-038) is wired by this factory: the
+  agent carries a `quant_fitness=` judge built over the
+  factory's measured census, and the same judge gates its
+  lifecycle — an unfit quant is refused at load, by name,
+  before the loader is asked (see QUANT_FITNESS.md).
+
 - **No on-device proof of any kind: NOT PROVEN.** No
   phone has run the citizen, been measured by it, or had
   its battery, thermal, or performance behaviour observed

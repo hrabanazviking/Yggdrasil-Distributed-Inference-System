@@ -63,8 +63,9 @@ presence and registry-worthiness are different claims.
 Per-model entry capabilities come from that model's own show
 surface alone (plus `stream` where `generate` is claimed): an
 embedding model is never dressed as a generator. `runnable_on`
-stays empty — which device classes may run a quant is
-quantisation fitness (Y-038), not this adapter's word.
+stays empty in this adapter's entries — quantisation fitness
+has landed (Y-038) and stamps it from the judge's verdicts,
+not this adapter's word.
 
 ## Streaming, told straight
 

@@ -184,6 +184,12 @@ model fetch duty has landed (Y-037 — an agent built with
 `model_fetcher=` fetches a model it lacks from a peer or a
 named source when policy allows, hash-verified, into its
 store, and carries the fetch report in `status()`; see
-MODEL_FETCH.md); no fabric
+MODEL_FETCH.md); and quantisation fitness has landed
+(Y-038 — an agent built with `quant_fitness=` answers
+pre-flight verdicts for any registry entry against its
+measured census via `quant_verdicts`, the citizen factories
+wire the same judge into their lifecycle so an unfit quant
+is refused at load, and `status()` carries the judge's
+summary; see QUANT_FITNESS.md); no fabric
 join (Part III). The skeleton has run in tests on this VM only;
 nothing here is a hardware claim.

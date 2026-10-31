@@ -28,6 +28,15 @@ never estimated from a file size or a sibling model.
   missing, or unregistered model is refused by name with its
   true status. Loading an already-loaded model is idempotent —
   the resident record is returned, its measured cost unchanged.
+- **Loading is gated on quant fitness when a judge is wired.**
+  The optional ``fitness_checker`` seam (Y-038) is called with
+  the store entry after presence verifies and before any
+  placement or loader call: a verdict that is not fit refuses
+  the load by name with every reason the judge named — a
+  quant too large for this node, or in a format needing an
+  accelerator it lacks, is refused at placement, not
+  discovered at crash time. Unwired, no fitness is claimed
+  and loading behaves exactly as before.
 - **Eviction and swaps.** When a load cannot fit, the manager
   evicts least-recently-used residents of that pool that are
   evictable — not pinned, not in use — measuring each unload.
@@ -202,6 +211,7 @@ class ModelLifecycle:
         loader=None,
         now=None,
         timer=None,
+        fitness_checker=None,
     ):
         if vram_bytes < 0 or ram_bytes < 0:
             raise ModelLifecycleError("memory budgets may not be negative")
@@ -215,6 +225,11 @@ class ModelLifecycle:
             "max_slots": int(max_slots),
         }
         self._loader = loader if loader is not None else SimulatedLoader()
+        # The quant-fitness judge (Y-038): a callable taking a
+        # store entry and returning a verdict dict with a
+        # ``fit`` flag and named ``reasons``. None = no fitness
+        # gate wired; the manager claims none.
+        self._fitness_checker = fitness_checker
         self._now = now or (lambda: datetime.now(UTC))
         self._timer = timer or time.perf_counter
         self._residents: dict[str, _Resident] = {}
@@ -376,6 +391,18 @@ class ModelLifecycle:
             self._refuse(name, message)
             raise ModelLifecycleError(message)
         entry = self._store.entry(name)
+        if self._fitness_checker is not None:
+            verdict = self._fitness_checker(entry)
+            if verdict is not None and not verdict.get("fit", False):
+                named = "; ".join(
+                    f"{r['code']}: {r['detail']}" for r in verdict.get("reasons", [])
+                ) or "judged unfit with no reason named"
+                message = (
+                    f"model {name!r} quant {entry['quant']!r} is not fit for "
+                    f"this node — refused at placement ({named})"
+                )
+                self._refuse(name, message)
+                raise ModelLifecycleError(message)
         size_bytes = entry["size_bytes"]
         pool = self._choose_placement(placement, size_bytes)
         evicted = self._make_room(pool, size_bytes)

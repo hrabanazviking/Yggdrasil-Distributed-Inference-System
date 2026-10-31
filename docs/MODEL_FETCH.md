@@ -130,9 +130,11 @@ and that trust is the caller's.
 
 No real transport (the fabric is Part III — peer carriage,
 discovery of *which* peer holds a model, and transfer
-resumption live there); no quantisation fitness (Y-038 —
-which quants of a model a device class may run is enforced
-at placement there; a fetched model still lands in the
-store whatever its quant); no fetching *for* another node
+resumption live there); quantisation fitness has landed
+(Y-038 — which quants a node may run is enforced at load /
+placement there, not at fetch: a fetched model still lands
+in the store whatever its quant, and the lifecycle's fitness
+gate is what refuses to load an unfit one); no fetching
+*for* another node
 (relay duty is a fabric question, Part III); and the node
 journal (Y-039) does not yet drink from these records.

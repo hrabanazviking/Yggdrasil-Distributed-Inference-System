@@ -88,6 +88,7 @@ from yggdrasil.model_fetch import ModelFetcher
 from yggdrasil.model_lifecycle import ModelLifecycle, budgets_from_census
 from yggdrasil.model_store import ModelStore
 from yggdrasil.node_agent import NodeAgent
+from yggdrasil.quant_fitness import QuantFitness
 from yggdrasil.sandbox import TaskSandbox
 
 _ROOT = Path(__file__).resolve().parents[2]
@@ -411,7 +412,12 @@ def build_pi_citizen_agent(
     budgets["ram_bytes"] = int(
         census["ram_gb"] * profile["governor_policy"]["max_memory_fraction"] * (1024**3)
     )
-    lifecycle = ModelLifecycle(config.node_id, store, now=now, **budgets)
+    fitness = QuantFitness(
+        config.node_id, device_class=config.device_class, census=census
+    )
+    lifecycle = ModelLifecycle(
+        config.node_id, store, now=now, fitness_checker=fitness, **budgets
+    )
     sandbox = TaskSandbox(config.node_id, now=now)
     queue = LocalQueue(config.node_id, now=now)
     monitor = FailureMonitor(
@@ -441,6 +447,7 @@ def build_pi_citizen_agent(
         local_queue=queue,
         failure_monitor=monitor,
         model_fetcher=fetcher,
+        quant_fitness=fitness,
         citizen=report,
     )
     return agent, report

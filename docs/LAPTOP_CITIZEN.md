@@ -204,6 +204,12 @@ stdlib module for scripts run from that directory.)
   peer has carried a model for this tree yet; see
   MODEL_FETCH.md).
 
+- Quantisation fitness (Y-038) is wired by this factory: the
+  agent carries a `quant_fitness=` judge built over the
+  factory's measured census, and the same judge gates its
+  lifecycle — an unfit quant is refused at load, by name,
+  before the loader is asked (see QUANT_FITNESS.md).
+
 - No systemd service is installed on purplelongship by
   this slice: enabling `deploy/yggdrasil-node.service`
   there stays the operator's act, with identity

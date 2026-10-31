@@ -97,8 +97,9 @@ presence and registry-worthiness are different claims.
 Per-model entry capabilities come from the operator's
 declarations alone: a declared embedding model claims
 `embed` and is never dressed as a generator. `runnable_on`
-stays empty — which device classes may run a quant is
-quantisation fitness (Y-038), not this adapter's word.
+stays empty in this adapter's entries — quantisation fitness
+has landed (Y-038) and stamps it from the judge's verdicts,
+not this adapter's word.
 
 ## The chat shape, told straight
 

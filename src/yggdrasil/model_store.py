@@ -45,8 +45,9 @@ Operations:
   accept for ``models_present``, so a census never lists a
   model whose bytes no longer match its pin.
 - ``model_entries()`` builds validated Y-008 registry entries
-  for verified models only (``runnable_on`` stays empty —
-  quantisation fitness is Y-038's word, not the store's).
+  for verified models only (``runnable_on`` stays empty unless
+  a quant-fitness judge (Y-038) is handed in — then it is
+  stamped from that judge's class-scope verdicts).
 - ``unregister(name)`` removes the index entry only; the file
   stays on disk, stated plainly, until an operator removes it.
 
@@ -405,13 +406,16 @@ class ModelStore:
 
     # -- registry shape -------------------------------------------------
 
-    def model_entries(self) -> list[dict]:
+    def model_entries(self, quant_fitness=None) -> list[dict]:
         """Validated Y-008 registry entries for the models that
         are present (hash-verified) right now. A corrupt or
         missing model gets no entry — the registry never dresses
         unverified bytes as a runnable model. ``runnable_on``
-        stays empty: which device classes a quant fits is
-        Y-038's enforcement, not the store's claim."""
+        stays empty unless a quant-fitness judge (Y-038) is
+        handed in, in which case each entry is stamped with the
+        classes that judge's verdicts earn — fitness is that
+        judge's word, computed from the entry, never the
+        store's own claim."""
         present = set(self.present_models())
         entries: list[dict] = []
         for entry in self._entries:
@@ -433,6 +437,8 @@ class ModelStore:
                 "capabilities": list(entry["capabilities"]),
                 "runnable_on": [],
             }
+            if quant_fitness is not None:
+                record["runnable_on"] = quant_fitness.runnable_on_for(record)
             entries.append(
                 _validate(_MODEL_ENTRY_VALIDATOR, record, "model entry")
             )

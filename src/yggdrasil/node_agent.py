@@ -140,6 +140,15 @@ every later Part II slice hangs its machinery on:
   refused, failed, each named — and ``status()`` carries the
   fetcher's report. Without one wired, the agent fetches
   nothing, as before.
+- **quantisation fitness (Y-038, grown onto the skeleton):**
+  a ``quant_fitness=`` handed in at construction is the node's
+  placement-time judge (``yggdrasil.quant_fitness``): the
+  citizen factories wire the same judge into the model
+  lifecycle, so an unfit quant is refused at load, and the
+  agent's own ``quant_verdicts`` answers the pre-flight
+  question for any registry entry against this node's
+  measured census. ``status()`` carries the judge's summary.
+  Without one wired, the agent judges nothing, as before.
 - **observability:** every lifecycle move is recorded as a
   Y-013 EventEnvelope from the ``node_agent`` component (the
   first real emitter in the tree), and written to the config's
@@ -187,6 +196,7 @@ from yggdrasil.local_queue import QueueError
 from yggdrasil.model_fetch import ModelFetchError
 from yggdrasil.model_lifecycle import ModelLifecycleError
 from yggdrasil.observability import LocalJsonlSink, make_event
+from yggdrasil.quant_fitness import QuantFitnessError
 from yggdrasil.sandbox import SandboxError
 
 _ROOT = Path(__file__).resolve().parents[2]
@@ -332,6 +342,7 @@ class NodeAgent:
         failure_monitor=None,
         citizen=None,
         model_fetcher=None,
+        quant_fitness=None,
     ):
         self.config = config
         self._store = key_store or LocalKeyStore(config.key_store_dir)
@@ -384,6 +395,12 @@ class NodeAgent:
         # source. When wired, fetch_model delegates to it and
         # status() carries its report.
         self._model_fetcher = model_fetcher
+        # The quant-fitness judge (Y-038): placement-time
+        # verdicts over this node's measured census. The same
+        # judge is wired into the lifecycle by the citizen
+        # factories, so load-time enforcement and this agent's
+        # pre-flight answers cannot disagree.
+        self._quant_fitness = quant_fitness
         self._health_endpoint: NodeHealthEndpoint | None = None
         self._census_collector: CensusCollector | None = None
         self._state = CREATED
@@ -471,6 +488,12 @@ class NodeAgent:
         """The node's model fetcher (Y-037), or None when the
         agent was built without one."""
         return self._model_fetcher
+
+    @property
+    def quant_fitness(self):
+        """The node's quant-fitness judge (Y-038), or None when
+        the agent was built without one."""
+        return self._quant_fitness
 
     # -- failure shapes (Y-032) -------------------------------------------
 
@@ -648,6 +671,25 @@ class NodeAgent:
         """The fetch duty's report (Y-037), or None when no
         fetcher is wired — fetching nothing, claiming nothing."""
         return self._model_fetcher.report() if self._model_fetcher is not None else None
+
+    # -- quantisation fitness (Y-038) ------------------------------------
+
+    def quant_verdicts(self, entry: dict) -> list[dict]:
+        """Pre-flight fitness (Y-038): this node's verdict on
+        every quant a registry entry lists, judged against the
+        node's measured census — the answer before placement is
+        attempted, with every refusal reason named."""
+        if self._quant_fitness is None:
+            raise NodeAgentError("this agent has no quant fitness judge wired")
+        try:
+            return self._quant_fitness.verdicts_for_entry(entry)
+        except QuantFitnessError as exc:
+            raise NodeAgentError(str(exc)) from exc
+
+    def quant_fitness_summary(self) -> dict | None:
+        """The fitness judge's summary (Y-038), or None when no
+        judge is wired — judging nothing, claiming nothing."""
+        return self._quant_fitness.summary() if self._quant_fitness is not None else None
 
     # -- model lifecycle (Y-027) ------------------------------------------
 
@@ -1061,6 +1103,7 @@ class NodeAgent:
             "queue": self.queue_report(),
             "failures": self.failure_report(),
             "model_fetch": self.fetch_report(),
+            "quant_fitness": self.quant_fitness_summary(),
             "citizen": self._citizen,
             "started_at": _fmt(self._started_at) if self._started_at else None,
             "joined_at": _fmt(self._joined_at) if self._joined_at else None,

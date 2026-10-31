@@ -59,8 +59,10 @@ never trusted from the index.
   verified names, in registration order; the callable the
   census collector (Y-022) and the node agent accept.
 - `model_entries()` — validated Y-008 registry entries for
-  verified models only. `runnable_on` stays empty: quantisation
-  fitness is Y-038's enforcement, not the store's claim.
+  verified models only. `runnable_on` stays empty unless a
+  quant-fitness judge is handed in (Y-038 has landed — then
+  it is stamped from that judge's class-scope verdicts; see
+  QUANT_FITNESS.md), never the store's own claim.
 - `unregister(name)` removes the index entry only. The file
   stays on disk — unregistering is bookkeeping, not deletion,
   and the store does not pretend otherwise.
