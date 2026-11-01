@@ -96,7 +96,11 @@ slots behind the same `DiscoveryService` shape.
   whole truth; heartbeats and present → suspect → gone
   liveness ageing are built at Y-054
   (`docs/LIVENESS.md`) — discovery expiry is *table*
-  freshness, not the liveness verdict.
+  freshness, not the liveness verdict — and epidemic
+  gossip of that registry and health state is built at
+  Y-055 (`docs/GOSSIP.md`): the peers discovery finds
+  are the peers gossip exchanges with, when real
+  carriage (Y-062) wires the two together.
 - No discovery seam on the node agent: as with the
   fabric (Y-050), the agent gained its peers' words at
   Y-054 as the *liveness* seam (`liveness_tracker=`).

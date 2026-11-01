@@ -98,9 +98,12 @@ transport's delivery rules, exactly as Y-049 benchmarked them.
   in its own right; its registrations riding these
   topics arrive with the real-LAN carriage at Y-062.
   Heartbeats and liveness are built at Y-054
-  (`docs/LIVENESS.md`), epidemic gossip of registry
-  and health state is Y-055, and the CRDT stores of
-  ADR-003 Y-056.
+  (`docs/LIVENESS.md`); epidemic gossip of registry
+  and health state is built at Y-055
+  (`docs/GOSSIP.md`) as its own anti-entropy mesh —
+  state there rides direct calls between the stores,
+  not these topics, until real carriage at Y-062 —
+  and the CRDT stores of ADR-003 are Y-056.
 - No fabric seam on the node agent: the agent gained
   its peers' words at Y-054 as the *liveness* seam
   (`liveness_tracker=`); it joins the fabric itself

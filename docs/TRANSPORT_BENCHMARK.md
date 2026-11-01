@@ -89,7 +89,8 @@ conformance kit, exactly as ADR-002 promised.
   (`docs/FABRIC.md`): the in-process core of this slice's winning
   candidate, store-and-forward outbox and all.
 - TLS carriage of the gossip channels is Y-051; discovery Y-052;
-  gossip of registry/health state as a service Y-055 (this slice's
-  anti-entropy is the benchmark's miniature, not the service).
+  gossip of registry/health state as a service is built at Y-055
+  (`docs/GOSSIP.md`) — the service's full anti-entropy rounds,
+  where this slice's was the benchmark's miniature.
 - No candidate's broker was installed: MQTT and NATS remain
   recorded configurations, swappable at Y-069, not deployments.

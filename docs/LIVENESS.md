@@ -112,8 +112,12 @@ events, replayed deterministically in the suite.
 ## Not built here
 
 - Epidemic gossip carrying heartbeats and registry
-  state between nodes is Y-055; the CRDT formalisation
-  of the registry and membership stores is Y-056.
+  state between nodes is built at Y-055
+  (`docs/GOSSIP.md`): beats travel through forwarding
+  stores and are judged by this tracker on arrival,
+  under exactly these freshness rules; the CRDT
+  formalisation of the registry and membership stores
+  is Y-056.
 - Real carriage of beats — heartbeats riding the
   fabric (Y-050) over TLS (Y-051) between the peers
   discovery finds (Y-052) — is Y-062 on the real LAN;

@@ -119,11 +119,13 @@ now.
   registry holds facts until they are superseded or
   withdrawn.
 - Epidemic gossip of registry and health state is
-  Y-055 (this slice's sync is pairwise and called
-  directly; gossip is its epidemic carriage), and the
-  CRDT formalisation of the registry + membership
-  stores is Y-056 (this slice's merge rules are the
-  behaviour that slice formalises and property-tests).
+  built at Y-055 (`docs/GOSSIP.md`): this slice's
+  pairwise sync is the merge gossip's anti-entropy
+  exchanges call, so replicas converge epidemically
+  under exactly these rules; the CRDT formalisation
+  of the registry + membership stores is Y-056 (this
+  slice's merge rules are the behaviour that slice
+  formalises and property-tests).
 - Real carriage — registrations riding the fabric
   (Y-050) over TLS (Y-051) between the peers discovery
   finds (Y-052) — is Y-062 on the real LAN; hardware
