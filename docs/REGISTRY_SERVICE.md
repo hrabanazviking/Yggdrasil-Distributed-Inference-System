@@ -123,9 +123,10 @@ now.
   pairwise sync is the merge gossip's anti-entropy
   exchanges call, so replicas converge epidemically
   under exactly these rules; the CRDT formalisation
-  of the registry + membership stores is Y-056 (this
-  slice's merge rules are the behaviour that slice
-  formalises and property-tests).
+  of the registry + membership stores is built at
+  Y-056 (`docs/CRDT_STORES.md`) — this slice's merge
+  rules stated as an LWW element set with
+  observed-remove models, and property-tested.
 - Real carriage — registrations riding the fabric
   (Y-050) over TLS (Y-051) between the peers discovery
   finds (Y-052) — is Y-062 on the real LAN; hardware

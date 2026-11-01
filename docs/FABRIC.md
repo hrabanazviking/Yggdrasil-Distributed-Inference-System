@@ -103,7 +103,8 @@ transport's delivery rules, exactly as Y-049 benchmarked them.
   (`docs/GOSSIP.md`) as its own anti-entropy mesh —
   state there rides direct calls between the stores,
   not these topics, until real carriage at Y-062 —
-  and the CRDT stores of ADR-003 are Y-056.
+  and the CRDT stores of ADR-003 are built at Y-056
+  (`docs/CRDT_STORES.md`).
 - No fabric seam on the node agent: the agent gained
   its peers' words at Y-054 as the *liveness* seam
   (`liveness_tracker=`); it joins the fabric itself

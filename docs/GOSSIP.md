@@ -146,7 +146,10 @@ rules, and convergence measured at three mesh sizes.
 
 - The CRDT formalisation of the registry and
   membership stores — these same merge rules stated as
-  a CRDT and property-tested — is Y-056.
+  a CRDT and property-tested — is built at Y-056
+  (`docs/CRDT_STORES.md`), standing beside this
+  carriage until real carriage (Y-062) gives CRDT
+  state a wire.
 - Real carriage — gossip riding the fabric (Y-050)
   over TLS (Y-051) between the peers discovery finds
   (Y-052), on the real LAN — is Y-062; hardware proof
