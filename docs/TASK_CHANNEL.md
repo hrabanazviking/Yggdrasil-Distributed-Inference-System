@@ -106,7 +106,8 @@ backpressure on the contract shapes.
   words; the reconciliation itself is Y-058's.
 - Message provenance enforcement (every message
   signed, unsigned traffic dropped and counted) is
-  Y-059; per-node rate and size quotas beyond this
+  built at Y-059 (`docs/MESSAGE_PROVENANCE.md`);
+  per-node rate and size quotas beyond this
   channel's own bounds are Y-060; store-and-forward
   for a sleeping node with a TTL is Y-061.
 - Real carriage on the home LAN is Y-062, and

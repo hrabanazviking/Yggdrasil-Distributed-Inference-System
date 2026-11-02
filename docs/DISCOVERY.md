@@ -109,6 +109,7 @@ slots behind the same `DiscoveryService` shape.
 - Certificate revocation is still not built (Y-011's
   named residual): an expired certificate is refused,
   a revoked-but-in-window one is not yet detectable.
-- Message-level signing of announcements is Y-059's
-  road; here the carried certificate *is* the
+- Message-level signing is built at Y-059
+  (`docs/MESSAGE_PROVENANCE.md`) as the provenance
+  gate; here the carried certificate *is* the
   announcement's proof, verified at the door.

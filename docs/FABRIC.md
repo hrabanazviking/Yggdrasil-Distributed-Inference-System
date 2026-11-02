@@ -59,7 +59,11 @@ itself). Pass a `verifier` and a message whose signature is
 missing or fails is a failed delivery named
 `signature_invalid`, held for direct retry, never quietly
 carried. The keys are Y-011's; this module holds no key material
-and mints no trust.
+and mints no trust. Message provenance enforcement — enrolment
+under Y-011 certificates, every message signed by its node,
+unsigned or wrongly-signed traffic dropped and counted — is
+built at Y-059 (`docs/MESSAGE_PROVENANCE.md`) as a provenance
+gate standing on this seam.
 
 ## Counted state
 

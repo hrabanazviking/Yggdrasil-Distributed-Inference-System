@@ -98,7 +98,8 @@ signers.
   never that the code is good. Key custody and revocation stay
   operator duties (Y-011; Kista integration is Y-196).
 - The keys are Y-011's pure-Python Ed25519 — not constant-time,
-  as Y-011 states. Fabric-carried signed messages are Y-059;
+  as Y-011 states. Fabric-carried signed messages are
+  built at Y-059 (`docs/MESSAGE_PROVENANCE.md`);
   provenance-chain checking for sensitive kinds is Y-139;
   payload encryption for sensitive kinds is Y-070.
 - The signature check is proven in the suite against real

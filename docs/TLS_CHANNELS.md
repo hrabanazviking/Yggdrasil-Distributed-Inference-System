@@ -103,7 +103,8 @@ with its stated not-constant-time limit.
   (Y-053) and heartbeat/liveness (Y-054) slices gave
   it the records those channels will carry.
 - Message-level signing of every fabric message is
-  Y-059 (the seam is Y-050's); TLS here authenticates
+  built at Y-059 (`docs/MESSAGE_PROVENANCE.md`; the
+  seam is Y-050's); TLS here authenticates
   the *channel* and both its ends.
 - Certificate revocation is still not built (Y-011's
   standing residual): a stolen node key impersonates
