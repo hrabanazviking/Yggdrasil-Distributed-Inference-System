@@ -169,7 +169,8 @@ runner's.
   shaper over fabric messages — shapes, not a
   rewiring of this wire; fabric observability on
   the operator's door is built at Y-064
-  (`docs/FABRIC_OBSERVABILITY.md`); mixed-version behaviour is Y-065; rejoin
+  (`docs/FABRIC_OBSERVABILITY.md`); mixed-version behaviour is built at
+  Y-065 (`docs/VERSIONED_PROTOCOL.md`); rejoin
   and re-sync Y-066; the registrar's death drill
   Y-067 — all standing on this carriage.
 - No node-agent seam in this slice: the agent joins

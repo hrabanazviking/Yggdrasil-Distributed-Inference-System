@@ -101,8 +101,9 @@ facts.
 ## Not built here
 
 - Mixed-version meshes degrading by contract are
-  Y-065; restart resilience and re-sync Y-066;
-  the registrar's death drill Y-067.
+  built at Y-065 (`docs/VERSIONED_PROTOCOL.md`);
+  restart resilience and re-sync Y-066; the
+  registrar's death drill Y-067.
 - The audit tap (Y-071) is a different door: an
   operator-consented event feed. This slice is
   counted standings, not a live event stream.

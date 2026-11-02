@@ -109,7 +109,8 @@ later WorldNet road will be graded against.
   (`docs/FABRIC_OBSERVABILITY.md`): this
   shaper's validated report is one of the
   door's named feeds.
-- Mixed-version meshes (Y-065), restart
+- Mixed-version meshes are built at Y-065
+  (`docs/VERSIONED_PROTOCOL.md`); restart
   resilience (Y-066), and the remaining Part III
   drills stand on this shaper and on Y-062's real
   carriage; real WorldNet carriage itself is a
