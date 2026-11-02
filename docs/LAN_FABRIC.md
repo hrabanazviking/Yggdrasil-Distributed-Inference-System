@@ -164,8 +164,11 @@ runner's.
 
 ## Not built here
 
-- WAN-shaped profiles over this wire are Y-063;
-  fabric observability on the operator's door is
+- WAN-shaped profiles are built at Y-063
+  (`docs/WAN_SIMULATION.md`) as a seeded simulator
+  shaper over fabric messages — shapes, not a
+  rewiring of this wire; fabric observability on
+  the operator's door is
   Y-064; mixed-version behaviour is Y-065; rejoin
   and re-sync Y-066; the registrar's death drill
   Y-067 — all standing on this carriage.
