@@ -97,6 +97,11 @@ transport's delivery rules, exactly as Y-049 benchmarked them.
   (`docs/REGISTRY_SERVICE.md`) as a replicated service
   in its own right; its registrations riding these
   topics arrive with the real-LAN carriage at Y-062.
+  The task channel is built at Y-057
+  (`docs/TASK_CHANNEL.md`): task offers publish on
+  these topics and claims, stream events, and results
+  ride these direct channels under an explicit
+  backpressure window.
   Heartbeats and liveness are built at Y-054
   (`docs/LIVENESS.md`); epidemic gossip of registry
   and health state is built at Y-055
