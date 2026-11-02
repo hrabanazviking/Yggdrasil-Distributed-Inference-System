@@ -125,7 +125,8 @@ refused, not guessed at.
   Y-066 (`docs/RESTART_RESILIENCE.md`); the
   registrar's death drill is built at Y-067
   (`docs/REGISTRAR_DEATH_DRILL.md`); clock
-  discipline Y-068.
+  discipline is built at Y-068
+  (`docs/CLOCK_DISCIPLINE.md`).
 - No node-agent seam: as with the Part III
   slices before it, the agent gains no protocol
   seam in this slice; deployment wiring enrols

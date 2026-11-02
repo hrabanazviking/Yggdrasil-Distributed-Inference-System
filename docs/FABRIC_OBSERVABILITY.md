@@ -105,7 +105,9 @@ facts.
   restart resilience and re-sync are built at
   Y-066 (`docs/RESTART_RESILIENCE.md`); the
   registrar's death drill is built at Y-067
-  (`docs/REGISTRAR_DEATH_DRILL.md`).
+  (`docs/REGISTRAR_DEATH_DRILL.md`); clock
+  discipline is built at Y-068
+  (`docs/CLOCK_DISCIPLINE.md`).
 - The audit tap (Y-071) is a different door: an
   operator-consented event feed. This slice is
   counted standings, not a live event stream.

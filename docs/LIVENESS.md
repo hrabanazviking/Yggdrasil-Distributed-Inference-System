@@ -129,4 +129,4 @@ events, replayed deterministically in the suite.
   behalf.
 - Clock discipline — peers reporting their skew, and
   temporal logic distrusting any single clock — is
-  Y-068.
+  built at Y-068 (`docs/CLOCK_DISCIPLINE.md`).

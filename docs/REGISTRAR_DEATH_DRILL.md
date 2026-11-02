@@ -138,7 +138,7 @@ kill — the registrar does not come back here.
 
 - Clock discipline — nodes reporting clock skew,
   temporal logic trusting no single node's clock
-  — is Y-068.
+  — is built at Y-068 (`docs/CLOCK_DISCIPLINE.md`).
 - Failure drills in general (node kill mid-task,
   partition mid-stream, corrupt message
   injection) are Y-073; Part III's gate, the

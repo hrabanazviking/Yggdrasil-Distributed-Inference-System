@@ -136,7 +136,8 @@ citizens is Part VIII's hardware road).
   first node ever started and proving the mesh
   notices nothing but a missing heartbeat — is
   built at Y-067 (`docs/REGISTRAR_DEATH_DRILL.md`);
-  clock discipline Y-068.
+  clock discipline is built at Y-068
+  (`docs/CLOCK_DISCIPLINE.md`).
 - Real carriage of digests and deltas over the
   fabric + TLS is deployment wiring on Y-062's
   proven road; this slice judges the exchange
