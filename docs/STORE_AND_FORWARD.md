@@ -121,9 +121,12 @@ on the contract shapes.
 
 ## Not built here
 
-- Real carriage on the home LAN — the fabric,
-  this waiting room included, on a real wire — is
-  Y-062; fabric observability (message rates,
+- Real carriage on the home LAN — the fabric on a
+  real wire — is built at Y-062
+  (`docs/LAN_FABRIC.md`); this waiting room's held
+  tasks ride that wire when a later slice wires the
+  mailbox to the composition, not yet. Fabric
+  observability (message rates,
   convergence, drops on the operator's door) is
   Y-064; hardware proof is Part VIII's.
 - Claiming and executing a delivered task follow
@@ -136,5 +139,6 @@ on the contract shapes.
   (Y-053), gossip (Y-055), CRDTs (Y-056), the task
   channel (Y-057), partitions (Y-058), provenance
   (Y-059), and rate discipline (Y-060), the agent
-  gains store-and-forward at real carriage
-  (Y-062), not before.
+  does not gain store-and-forward at real carriage
+  (Y-062) either — the composition adds no agent
+  seam, as Y-062's own doc records.

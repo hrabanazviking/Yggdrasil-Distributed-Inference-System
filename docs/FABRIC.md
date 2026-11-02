@@ -99,8 +99,12 @@ transport's delivery rules, exactly as Y-049 benchmarked them.
   the registry service at Y-053, not this core.
 - The registry service is built at Y-053
   (`docs/REGISTRY_SERVICE.md`) as a replicated service
-  in its own right; its registrations riding these
-  topics arrive with the real-LAN carriage at Y-062.
+  in its own right; the real-LAN carriage its
+  registrations will ride is built at Y-062
+  (`docs/LAN_FABRIC.md`) — the wire proven there
+  carries fabric messages between the three real
+  citizens; registry state itself rides it from
+  Y-063 onward, not yet.
   The task channel is built at Y-057
   (`docs/TASK_CHANNEL.md`): task offers publish on
   these topics and claims, stream events, and results
@@ -116,11 +120,14 @@ transport's delivery rules, exactly as Y-049 benchmarked them.
   (`docs/CRDT_STORES.md`).
 - No fabric seam on the node agent: the agent gained
   its peers' words at Y-054 as the *liveness* seam
-  (`liveness_tracker=`); it joins the fabric itself
-  when real carriage (Y-062) gives it a wire.
-  Components use `Fabric` directly until then.
+  (`liveness_tracker=`); real carriage (Y-062,
+  `docs/LAN_FABRIC.md`) gives the composition a wire
+  but adds no agent seam — components use `Fabric`
+  directly, as the `LanNode` composition does.
 - The real wire — sockets under TLS between machines — is
   carried by Y-051's TLS channels and proven on the real
-  LAN at Y-062 and on hardware in Part VIII; the
+  LAN at Y-062 (`docs/LAN_FABRIC.md`: verdict
+  `proven`, three citizens, TLS 1.3 on every leg) and
+  on hardware in Part VIII; the
   losers of Y-049's race stay swappable through the Y-069
   fabric conformance kit.

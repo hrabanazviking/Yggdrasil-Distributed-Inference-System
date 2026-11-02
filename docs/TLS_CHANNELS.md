@@ -86,8 +86,10 @@ verified by the platform TLS stack — over an in-process
 socketpair, so channel records carry `simulated: false`.
 That proves the cryptography, the identity binding, and
 the refusal behaviour. It does **not** prove carriage
-across a real LAN between machines: that is Y-062, and
-Part VIII takes the mesh to hardware. The Ed25519
+across a real LAN between machines: that is built at
+Y-062 (`docs/LAN_FABRIC.md`), where these channels
+carried the three citizens' traffic over the real
+wire, and Part VIII takes the mesh to hardware. The Ed25519
 signing underneath is Y-011's pure-Python implementation
 with its stated not-constant-time limit.
 
@@ -99,7 +101,9 @@ with its stated not-constant-time limit.
   verifies. Channels here are still opened to peers the
   caller names, over sockets the caller already holds.
 - Wiring the node agent to open TLS channels itself
-  arrives with real carriage at Y-062; the registry
+  is still not built: real carriage at Y-062
+  (`docs/LAN_FABRIC.md`) opens these channels from
+  deployment wiring, not from the agent; the registry
   (Y-053) and heartbeat/liveness (Y-054) slices gave
   it the records those channels will carry.
 - Message-level signing of every fabric message is

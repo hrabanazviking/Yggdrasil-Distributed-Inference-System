@@ -87,9 +87,12 @@ slots behind the same `DiscoveryService` shape.
 
 ## Not built here
 
-- Real mDNS / real-LAN carriage is Y-062 (Pi + laptop
-  + VM over the home network, discovery unaided);
-  hardware proof is Part VIII's.
+- Real-LAN carriage is built at Y-062
+  (`docs/LAN_FABRIC.md`): the three citizens stood on
+  the real wire with announcements exchanged on the
+  TLS channels — by the seed road, not the mDNS wire
+  protocol, which remains unbuilt; hardware proof
+  is Part VIII's.
 - The registry service is built at Y-053
   (`docs/REGISTRY_SERVICE.md`): nodes register census +
   models at any replica, and every replica holds the
@@ -100,12 +103,14 @@ slots behind the same `DiscoveryService` shape.
   gossip of that registry and health state is built at
   Y-055 (`docs/GOSSIP.md`): the peers discovery finds
   are the peers gossip exchanges with, when real
-  carriage (Y-062) wires the two together.
+  carriage (Y-062, `docs/LAN_FABRIC.md`) wires the
+  two together.
 - No discovery seam on the node agent: as with the
   fabric (Y-050), the agent gained its peers' words at
   Y-054 as the *liveness* seam (`liveness_tracker=`).
-  Components use `DiscoveryService` directly until
-  real carriage at Y-062.
+  Components use `DiscoveryService` directly; the
+  Y-062 composition holds a `DiscoveryService` per
+  node and still adds no agent seam.
 - Certificate revocation is still not built (Y-011's
   named residual): an expired certificate is refused,
   a revoked-but-in-window one is not yet detectable.
