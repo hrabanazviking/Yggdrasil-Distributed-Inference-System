@@ -84,17 +84,34 @@ transport's delivery rules, exactly as Y-049 benchmarked them.
 ## Not built here
 
 - TLS carriage of these channels, with Y-011 node certificates
-  on every connection and no plaintext mode, is Y-051.
-- Discovery (mDNS + seed list) is Y-052; nodes here attach by
-  name the caller already knows.
-- The registry service riding these topics is Y-053,
-  heartbeats and liveness Y-054, epidemic gossip of registry
-  and health state Y-055, and the CRDT stores of ADR-003
-  Y-056.
-- No node-agent seam: the agent joins the fabric when the
-  registry and heartbeat slices give it something to say
-  (Y-053/Y-054). Components use `Fabric` directly until then.
-- The real wire — sockets under TLS between machines — arrives
-  with Y-051 and is proven on hardware in Part VIII; the
+  on every connection and no plaintext mode, is built at
+  Y-051 (`docs/TLS_CHANNELS.md`): real mutual TLS 1.3 with
+  the peer binding checked against Y-011 by key.
+- Discovery (mDNS + seed list, no cloud rendezvous) is
+  built at Y-052 (`docs/DISCOVERY.md`): nodes announce
+  with their Y-011 certificates and are admitted only
+  when the certificate verifies. Nodes here still attach
+  by name the caller already knows — discovery feeds
+  the registry service at Y-053, not this core.
+- The registry service is built at Y-053
+  (`docs/REGISTRY_SERVICE.md`) as a replicated service
+  in its own right; its registrations riding these
+  topics arrive with the real-LAN carriage at Y-062.
+  Heartbeats and liveness are built at Y-054
+  (`docs/LIVENESS.md`); epidemic gossip of registry
+  and health state is built at Y-055
+  (`docs/GOSSIP.md`) as its own anti-entropy mesh —
+  state there rides direct calls between the stores,
+  not these topics, until real carriage at Y-062 —
+  and the CRDT stores of ADR-003 are built at Y-056
+  (`docs/CRDT_STORES.md`).
+- No fabric seam on the node agent: the agent gained
+  its peers' words at Y-054 as the *liveness* seam
+  (`liveness_tracker=`); it joins the fabric itself
+  when real carriage (Y-062) gives it a wire.
+  Components use `Fabric` directly until then.
+- The real wire — sockets under TLS between machines — is
+  carried by Y-051's TLS channels and proven on the real
+  LAN at Y-062 and on hardware in Part VIII; the
   losers of Y-049's race stay swappable through the Y-069
   fabric conformance kit.

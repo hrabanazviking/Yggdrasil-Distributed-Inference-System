@@ -91,10 +91,12 @@ joined, alongside the status and health it already printed.
 
 ## Not built here
 
-No network server, no fabric carriage, and no peer-side
-liveness ageing (present → suspect → gone is Y-054, on
-missed beats, judged by the watcher — never by the node
-itself). No queue truth beyond the health report's own
+No network server and no fabric carriage. Peer-side
+liveness ageing is built at Y-054
+(`docs/LIVENESS.md`): the watcher ages this heartbeat's
+silence present → suspect → gone on its own clock —
+never the node itself, which still never reports itself
+suspect. No queue truth beyond the health report's own
 depth (the queue itself is Y-031; see LOCAL_QUEUE.md), and
 no hardware claim: the suite's snapshots are
 fixtures and this VM's own agent; the citizens that run
