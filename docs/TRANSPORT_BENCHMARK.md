@@ -79,8 +79,9 @@ the candidates race as faithful in-process models of their
 topologies and persistence rules, driven by declared parameters.
 The real-broker, on-hardware race — brokers installed natively on
 Mimir and purplelongship under the citizen suites — belongs to
-Part VIII. The losers stay swappable through the Y-069 fabric
-conformance kit, exactly as ADR-002 promised.
+Part VIII. The losers stay swappable through the fabric
+conformance kit built at Y-069
+(`docs/FABRIC_CONFORMANCE.md`), exactly as ADR-002 promised.
 
 ## Not built here
 
@@ -93,4 +94,6 @@ conformance kit, exactly as ADR-002 promised.
   (`docs/GOSSIP.md`) — the service's full anti-entropy rounds,
   where this slice's was the benchmark's miniature.
 - No candidate's broker was installed: MQTT and NATS remain
-  recorded configurations, swappable at Y-069, not deployments.
+  recorded configurations, swappable through the conformance
+  kit built at Y-069 (`docs/FABRIC_CONFORMANCE.md`), not
+  deployments.

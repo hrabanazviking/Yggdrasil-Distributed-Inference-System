@@ -60,7 +60,7 @@ def _mini_tree(tmp_path: Path) -> Path:
         tree,
         ignore=shutil.ignore_patterns(
             ".git", ".venv", "__pycache__", ".pytest_cache", ".ruff_cache",
-            ".tmp_local", "*.egg-info",
+            ".tmp", ".tmp_local", "*.egg-info",
         ),
     )
     return tree

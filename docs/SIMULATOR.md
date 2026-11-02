@@ -76,7 +76,9 @@ module):
   declared constant per node (or a declared per-task formula
   when a Y-015 fake engine handles the task), and no memory,
   thermal, or load behaviour is simulated. Governors are
-  Part II; load shapes are later wind-tunnel work (Y-063,
-  Y-072).
+  Part II; WAN latency/loss shapes are built at Y-063
+  (`docs/WAN_SIMULATION.md`) as a seeded shaper over
+  fabric messages; load shapes are later wind-tunnel
+  work (Y-072).
 - Nothing in this slice has run on hardware, and no simulator
   result may be cited as evidence about a real device.

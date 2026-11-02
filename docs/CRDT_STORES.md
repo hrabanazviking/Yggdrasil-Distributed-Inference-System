@@ -116,11 +116,16 @@ mathematics on the contract shapes.
   proof is Part VIII's.
 - Partition behaviour of the whole mesh (split halves
   working independently, duplicate task executions
-  reconciled on healing) is Y-058; this slice proves
-  the store-level merge that healing will rely on.
+  reconciled on healing) is built at Y-058
+  (`docs/PARTITION.md`), standing on this slice's
+  merge; this slice proves the store-level merge that
+  healing relies on.
 - Restart resilience — a node rejoining and
   re-syncing its CRDT state without a full reload —
-  is Y-066.
+  is built at Y-066 (`docs/RESTART_RESILIENCE.md`),
+  standing on this slice's merge: digests name the
+  elements a delta must carry, and the deltas land
+  by `merge_state` here.
 - No CRDT seam on the node agent: as with the
   registry (Y-053) and gossip (Y-055), the agent gains
   fabric traffic at real carriage (Y-062).

@@ -162,7 +162,8 @@ rules, and convergence measured at three mesh sizes.
   *liveness* seam (`liveness_tracker=`) until real
   carriage at Y-062 gives it a wire. No citizen factory
   wires a gossip mesh in this slice.
-- Message-level signing of gossiped state is Y-059's
-  road; clock discipline — peers reporting skew, and
+- Message-level signing of gossiped state is built
+  at Y-059 (`docs/MESSAGE_PROVENANCE.md`) as the
+  provenance gate; clock discipline — peers reporting skew, and
   temporal logic distrusting any single clock — is
   Y-068.

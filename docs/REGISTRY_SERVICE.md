@@ -138,6 +138,6 @@ now.
   until real carriage at Y-062 gives it a wire.
 - Registration is a node's word about itself, gated by
   census agreement and sequence — message-level
-  signing of registrations is Y-059's road, and
-  certificate revocation remains Y-011's named
-  residual.
+  signing is built at Y-059
+  (`docs/MESSAGE_PROVENANCE.md`), and certificate
+  revocation remains Y-011's named residual.
