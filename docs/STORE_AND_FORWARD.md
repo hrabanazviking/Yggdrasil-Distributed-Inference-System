@@ -128,7 +128,8 @@ on the contract shapes.
   mailbox to the composition, not yet. Fabric
   observability (message rates,
   convergence, drops on the operator's door) is
-  Y-064; hardware proof is Part VIII's.
+  built at Y-064 (`docs/FABRIC_OBSERVABILITY.md`);
+  hardware proof is Part VIII's.
 - Claiming and executing a delivered task follow
   the task channel's discipline (Y-057) once the
   node wakes; this slice holds envelopes and

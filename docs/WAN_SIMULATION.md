@@ -105,7 +105,10 @@ later WorldNet road will be graded against.
 - Fabric observability — message rates,
   convergence, and drops on the operator's
   door, over this shaper's crossings among the
-  rest — is Y-064.
+  rest — is built at Y-064
+  (`docs/FABRIC_OBSERVABILITY.md`): this
+  shaper's validated report is one of the
+  door's named feeds.
 - Mixed-version meshes (Y-065), restart
   resilience (Y-066), and the remaining Part III
   drills stand on this shaper and on Y-062's real

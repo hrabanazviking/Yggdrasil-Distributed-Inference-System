@@ -137,8 +137,9 @@ throttle law on the contract shapes.
   hardware proof is Part VIII's.
 - Fabric-wide rate observability — message rates,
   convergence, and drops on the operator's door —
-  is Y-064; this slice's report is one peer's own
-  standing.
+  is built at Y-064
+  (`docs/FABRIC_OBSERVABILITY.md`); this slice's
+  report is one peer's own standing.
 - No node-agent seam: as with the registry
   (Y-053), gossip (Y-055), CRDTs (Y-056), the task
   channel (Y-057), partitions (Y-058), and
