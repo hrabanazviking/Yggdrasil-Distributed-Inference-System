@@ -121,7 +121,8 @@ refused, not guessed at.
 
 ## Not built here
 
-- Restart resilience and re-sync are Y-066; the
+- Restart resilience and re-sync are built at
+  Y-066 (`docs/RESTART_RESILIENCE.md`); the
   registrar's death drill Y-067; clock discipline
   Y-068.
 - No node-agent seam: as with the Part III

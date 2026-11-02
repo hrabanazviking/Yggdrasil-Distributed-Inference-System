@@ -122,7 +122,10 @@ mathematics on the contract shapes.
   healing relies on.
 - Restart resilience — a node rejoining and
   re-syncing its CRDT state without a full reload —
-  is Y-066.
+  is built at Y-066 (`docs/RESTART_RESILIENCE.md`),
+  standing on this slice's merge: digests name the
+  elements a delta must carry, and the deltas land
+  by `merge_state` here.
 - No CRDT seam on the node agent: as with the
   registry (Y-053) and gossip (Y-055), the agent gains
   fabric traffic at real carriage (Y-062).

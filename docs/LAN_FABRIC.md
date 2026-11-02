@@ -171,8 +171,10 @@ runner's.
   the operator's door is built at Y-064
   (`docs/FABRIC_OBSERVABILITY.md`); mixed-version behaviour is built at
   Y-065 (`docs/VERSIONED_PROTOCOL.md`); rejoin
-  and re-sync Y-066; the registrar's death drill
-  Y-067 — all standing on this carriage.
+  and re-sync are built at Y-066
+  (`docs/RESTART_RESILIENCE.md`); the registrar's
+  death drill Y-067 — all standing on this
+  carriage.
 - No node-agent seam in this slice: the agent joins
   the fabric through this composition when a later
   slice wires it, exactly as the earlier Part III
