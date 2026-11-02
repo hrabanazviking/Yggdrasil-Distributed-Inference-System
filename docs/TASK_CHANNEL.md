@@ -100,9 +100,10 @@ backpressure on the contract shapes.
 
 - Partition behaviour — a split mesh working in
   halves, and duplicate task executions reconciled by
-  task id on healing — is Y-058. This slice's claims
-  are single-mesh words; nothing here reconciles two
-  claims made on opposite sides of a cut.
+  task id on healing — is built at Y-058
+  (`docs/PARTITION.md`), in a partition ledger beside
+  this channel. This slice's claims are single-mesh
+  words; the reconciliation itself is Y-058's.
 - Message provenance enforcement (every message
   signed, unsigned traffic dropped and counted) is
   Y-059; per-node rate and size quotas beyond this

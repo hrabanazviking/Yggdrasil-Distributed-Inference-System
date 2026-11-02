@@ -116,8 +116,10 @@ mathematics on the contract shapes.
   proof is Part VIII's.
 - Partition behaviour of the whole mesh (split halves
   working independently, duplicate task executions
-  reconciled on healing) is Y-058; this slice proves
-  the store-level merge that healing will rely on.
+  reconciled on healing) is built at Y-058
+  (`docs/PARTITION.md`), standing on this slice's
+  merge; this slice proves the store-level merge that
+  healing relies on.
 - Restart resilience — a node rejoining and
   re-syncing its CRDT state without a full reload —
   is Y-066.
