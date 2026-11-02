@@ -130,7 +130,7 @@ remain candidates for that road, not deployments.
 ## Not built here
 
 - Encrypted payloads for sensitive task kinds are
-  Y-070.
+  built at Y-070 (`docs/SEALED_PAYLOADS.md`).
 - No candidate transport was built or installed in
   this slice: the kit is the gate a future swap
   must pass, not the swap itself.

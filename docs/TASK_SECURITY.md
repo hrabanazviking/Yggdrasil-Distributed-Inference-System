@@ -101,7 +101,8 @@ signers.
   as Y-011 states. Fabric-carried signed messages are
   built at Y-059 (`docs/MESSAGE_PROVENANCE.md`);
   provenance-chain checking for sensitive kinds is Y-139;
-  payload encryption for sensitive kinds is Y-070.
+  payload encryption for sensitive kinds is built at
+  Y-070 (`docs/SEALED_PAYLOADS.md`).
 - The signature check is proven in the suite against real
   generated keypairs — the cryptography is not simulated. No
   code task has run on named hardware, and none is claimed.
