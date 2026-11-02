@@ -124,7 +124,8 @@ the provenance law on the contract shapes.
 ## Not built here
 
 - Per-node rate and size quotas — a flooding node
-  throttled by its peers — are Y-060; this door
+  throttled by its peers — are built at Y-060
+  (`docs/RATE_DISCIPLINE.md`); this door
   judges *whose* traffic is real, Y-060 rations
   *how much* of it rides.
 - Store-and-forward for a sleeping node, with a

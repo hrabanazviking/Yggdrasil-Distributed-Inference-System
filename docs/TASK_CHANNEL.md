@@ -108,7 +108,8 @@ backpressure on the contract shapes.
   signed, unsigned traffic dropped and counted) is
   built at Y-059 (`docs/MESSAGE_PROVENANCE.md`);
   per-node rate and size quotas beyond this
-  channel's own bounds are Y-060; store-and-forward
+  channel's own bounds are built at Y-060
+  (`docs/RATE_DISCIPLINE.md`); store-and-forward
   for a sleeping node with a TTL is Y-061.
 - Real carriage on the home LAN is Y-062, and
   hardware proof is Part VIII's.

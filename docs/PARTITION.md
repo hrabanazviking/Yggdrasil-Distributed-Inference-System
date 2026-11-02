@@ -146,7 +146,8 @@ and the reconciliation law on the contract shapes.
 - Message provenance enforcement — every message
   signed, unsigned traffic dropped and counted — is
   built at Y-059 (`docs/MESSAGE_PROVENANCE.md`);
-  per-node rate and size quotas are Y-060;
+  per-node rate and size quotas are built at Y-060
+  (`docs/RATE_DISCIPLINE.md`);
   store-and-forward for a sleeping node is Y-061.
 - Real carriage — the fabric on the real LAN, TLS
   on, discovery unaided — is Y-062; hardware proof
