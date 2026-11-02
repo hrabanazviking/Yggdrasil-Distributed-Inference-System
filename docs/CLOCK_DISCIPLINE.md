@@ -102,7 +102,7 @@ belief, and named refusals.
 
 - The fabric conformance kit — any future
   transport swap passing the same suite — is
-  Y-069.
+  built at Y-069 (`docs/FABRIC_CONFORMANCE.md`).
 - Part VI's temporal projection consumes this
   door when it is built; nothing here claims its
   verdicts.

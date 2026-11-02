@@ -129,5 +129,7 @@ transport's delivery rules, exactly as Y-049 benchmarked them.
   LAN at Y-062 (`docs/LAN_FABRIC.md`: verdict
   `proven`, three citizens, TLS 1.3 on every leg) and
   on hardware in Part VIII; the
-  losers of Y-049's race stay swappable through the Y-069
-  fabric conformance kit.
+  losers of Y-049's race stay swappable through the
+  fabric conformance kit built at Y-069
+  (`docs/FABRIC_CONFORMANCE.md`), which this fabric
+  itself passes 14/14.
