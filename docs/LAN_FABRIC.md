@@ -173,8 +173,9 @@ runner's.
   Y-065 (`docs/VERSIONED_PROTOCOL.md`); rejoin
   and re-sync are built at Y-066
   (`docs/RESTART_RESILIENCE.md`); the registrar's
-  death drill Y-067 — all standing on this
-  carriage.
+  death drill is built at Y-067
+  (`docs/REGISTRAR_DEATH_DRILL.md`) — all standing
+  on this carriage.
 - No node-agent seam in this slice: the agent joins
   the fabric through this composition when a later
   slice wires it, exactly as the earlier Part III

@@ -83,8 +83,9 @@ object and a "checkpoint" an in-process state
 record standing in for durable storage; no
 process was killed, no disk was written, no
 socket opened, no LAN crossed (real carriage was
-Y-062's own proof; killing real processes on real
-citizens is the Y-067 death drill and Part VIII's
+Y-062's own proof; the registrar's death drill is
+Y-067's in-process exercise, and killing real
+processes on real citizens is Part VIII's
 hardware road).
 """
 

@@ -126,15 +126,17 @@ in-process loss of one replica object and a
 in for durable storage; no process was killed,
 no disk was written, no socket opened, no LAN
 crossed (real carriage was Y-062's own proof;
-killing real processes on real citizens is the
-Y-067 death drill and Part VIII's hardware road).
+the registrar's death drill is Y-067's in-process
+exercise, and killing real processes on real
+citizens is Part VIII's hardware road).
 
 ## Not built here
 
 - The registrar's death drill — killing the
   first node ever started and proving the mesh
   notices nothing but a missing heartbeat — is
-  Y-067; clock discipline Y-068.
+  built at Y-067 (`docs/REGISTRAR_DEATH_DRILL.md`);
+  clock discipline Y-068.
 - Real carriage of digests and deltas over the
   fabric + TLS is deployment wiring on Y-062's
   proven road; this slice judges the exchange

@@ -104,7 +104,8 @@ facts.
   built at Y-065 (`docs/VERSIONED_PROTOCOL.md`);
   restart resilience and re-sync are built at
   Y-066 (`docs/RESTART_RESILIENCE.md`); the
-  registrar's death drill Y-067.
+  registrar's death drill is built at Y-067
+  (`docs/REGISTRAR_DEATH_DRILL.md`).
 - The audit tap (Y-071) is a different door: an
   operator-consented event feed. This slice is
   counted standings, not a live event stream.
