@@ -148,7 +148,8 @@ and the reconciliation law on the contract shapes.
   built at Y-059 (`docs/MESSAGE_PROVENANCE.md`);
   per-node rate and size quotas are built at Y-060
   (`docs/RATE_DISCIPLINE.md`);
-  store-and-forward for a sleeping node is Y-061.
+  store-and-forward for a sleeping node is built
+  at Y-061 (`docs/STORE_AND_FORWARD.md`).
 - Real carriage — the fabric on the real LAN, TLS
   on, discovery unaided — is Y-062; hardware proof
   is Part VIII's.

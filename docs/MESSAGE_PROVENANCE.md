@@ -129,7 +129,9 @@ the provenance law on the contract shapes.
   judges *whose* traffic is real, Y-060 rations
   *how much* of it rides.
 - Store-and-forward for a sleeping node, with a
-  TTL, is Y-061; real carriage on the home LAN —
+  TTL, is built at Y-061
+  (`docs/STORE_AND_FORWARD.md`); real carriage on
+  the home LAN —
   this gate's door on a real wire — is Y-062;
   hardware proof is Part VIII's.
 - Certificate revocation is still not built

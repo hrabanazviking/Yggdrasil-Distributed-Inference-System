@@ -130,7 +130,9 @@ throttle law on the contract shapes.
 ## Not built here
 
 - Store-and-forward for a sleeping node, with a
-  TTL, is Y-061; real carriage on the home LAN —
+  TTL, is built at Y-061
+  (`docs/STORE_AND_FORWARD.md`); real carriage on
+  the home LAN —
   this door judging real wire traffic — is Y-062;
   hardware proof is Part VIII's.
 - Fabric-wide rate observability — message rates,

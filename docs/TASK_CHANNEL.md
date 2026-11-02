@@ -110,7 +110,8 @@ backpressure on the contract shapes.
   per-node rate and size quotas beyond this
   channel's own bounds are built at Y-060
   (`docs/RATE_DISCIPLINE.md`); store-and-forward
-  for a sleeping node with a TTL is Y-061.
+  for a sleeping node with a TTL is built at Y-061
+  (`docs/STORE_AND_FORWARD.md`).
 - Real carriage on the home LAN is Y-062, and
   hardware proof is Part VIII's.
 - No task-channel seam on the node agent: as with
