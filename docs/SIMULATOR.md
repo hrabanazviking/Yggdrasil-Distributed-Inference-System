@@ -78,7 +78,8 @@ module):
   thermal, or load behaviour is simulated. Governors are
   Part II; WAN latency/loss shapes are built at Y-063
   (`docs/WAN_SIMULATION.md`) as a seeded shaper over
-  fabric messages; load shapes are later wind-tunnel
-  work (Y-072).
+  fabric messages; load shapes are built at Y-072
+  (`docs/LOAD_SHAPES.md`) as wind-tunnel work over
+  the Y-055 gossip mesh and Y-054 heartbeats.
 - Nothing in this slice has run on hardware, and no simulator
   result may be cited as evidence about a real device.

@@ -95,7 +95,7 @@ its records.
 
 - Load shapes — heartbeat and gossip overhead
   measured per node count — are built at Y-072
-  (`docs/LOAD_SHAPES.md` when it lands).
+  (`docs/LOAD_SHAPES.md`).
 - No node-agent seam: as with the Part III
   slices before it, the agent gains no tap seam
   in this slice; deployment wiring hands the tap

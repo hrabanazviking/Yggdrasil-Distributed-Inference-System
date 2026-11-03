@@ -154,8 +154,9 @@ rules, and convergence measured at three mesh sizes.
   over TLS (Y-051) between the peers discovery finds
   (Y-052), on the real LAN — is Y-062; hardware proof
   is Part VIII's. Gossip overhead as a published
-  per-node-count load shape is Y-072 (this slice's
-  measurements are its first numbers).
+  per-node-count load shape is built at Y-072
+  (`docs/LOAD_SHAPES.md`), whose measurements run
+  on this slice's mesh and counted reports.
 - No gossip seam on the node agent: as with the
   registry (Y-053), gossip is a mesh component's own
   act; the agent's fabric words remain its Y-054
