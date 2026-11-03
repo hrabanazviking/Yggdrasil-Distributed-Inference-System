@@ -108,7 +108,8 @@ facts.
   (`docs/REGISTRAR_DEATH_DRILL.md`); clock
   discipline is built at Y-068
   (`docs/CLOCK_DISCIPLINE.md`).
-- The audit tap (Y-071) is a different door: an
+- The audit tap is built at Y-071
+  (`docs/AUDIT_TAP.md`) — a different door: an
   operator-consented event feed. This slice is
   counted standings, not a live event stream.
 - No node-agent seam: as with the Part III slices

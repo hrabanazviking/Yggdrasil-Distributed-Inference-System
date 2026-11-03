@@ -125,7 +125,7 @@ and is not claimed.
 
 - The audit tap — an operator-consented, read-only
   feed of fabric events, off by default — is built
-  at Y-071 (`docs/AUDIT_TAP.md` when it lands).
+  at Y-071 (`docs/AUDIT_TAP.md`).
 - No node-agent seam: as with the Part III slices
   before it, the agent gains no sealing seam in
   this slice; deployment wiring enrols the nodes it
