@@ -9,8 +9,9 @@ of leaving it a claim in a commit message:
 
 - every slice Y-001 – Y-019 names the files it was banked on, and
   every one of those files must exist and be non-empty;
-- the founding README must be byte-for-byte the document the
-  campaign opened on (its md5 is the campaign's standing check);
+- the founding README specification must remain byte-for-byte the
+  campaign-open document (its md5 is the standing check); a dated
+  separately bounded progress appendix may be appended;
 - the standing checks the earlier slices built must all still
   pass from here: every contract schema valid and versioned
   (Y-009/Y-016), every registered data file valid (Y-016), the
@@ -52,6 +53,11 @@ from yggdrasil.simulator import Simulator
 _ROOT = Path(__file__).resolve().parents[2]
 
 README_MD5_AT_OPEN = "89a37a4e18cab9a998e1751c32e7bfd5"
+
+# The founding document remains byte-for-byte protected. A dated progress
+# appendix may follow it, bounded by these explicit markers.
+README_PROGRESS_START = b"\n<!-- BEGIN YGGDRASIL PROGRESS REPORT (2026-11-06) -->\n"
+README_PROGRESS_END = b"<!-- END YGGDRASIL PROGRESS REPORT (2026-11-06) -->\n"
 
 # Each Part I slice and the files it was banked on. A slice whose
 # deliverable is missing or empty has not landed, whatever any
@@ -197,17 +203,35 @@ def check_deliverables(root: Path | None = None) -> int:
 
 
 def check_readme_unchanged(root: Path | None = None) -> str:
-    """The founding spec README, md5-checked against the value
-    recorded when the campaign opened. The spec is Volmarr's
-    document; this campaign never touches it."""
+    """Protect the original README specification byte-for-byte.
+
+    A bounded, explicitly authorized progress appendix may follow the
+    campaign-open document without changing its historical MD5. Reject
+    extra trailing bytes and malformed or duplicated appendix markers.
+    """
     root = Path(root) if root is not None else _ROOT
     try:
-        digest = hashlib.md5((root / "README.md").read_bytes()).hexdigest()
+        data = (root / "README.md").read_bytes()
     except OSError as exc:
         raise GateError(f"cannot read README.md: {exc}") from exc
+
+    if data.count(README_PROGRESS_START) > 1:
+        raise GateError("README.md has duplicate progress appendix markers")
+    if README_PROGRESS_START in data:
+        founding_spec, _, appendix = data.partition(README_PROGRESS_START)
+        if (
+            not appendix
+            or not appendix.endswith(README_PROGRESS_END)
+            or appendix.count(README_PROGRESS_END) != 1
+        ):
+            raise GateError("README.md progress appendix has an invalid closing marker")
+    else:
+        founding_spec = data
+
+    digest = hashlib.md5(founding_spec).hexdigest()
     if digest != README_MD5_AT_OPEN:
         raise GateError(
-            f"README.md md5 {digest} != campaign-open {README_MD5_AT_OPEN} "
+            f"README.md founding-spec md5 {digest} != campaign-open {README_MD5_AT_OPEN} "
             f"— the founding document must not change"
         )
     return digest

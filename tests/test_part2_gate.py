@@ -31,7 +31,11 @@ from pathlib import Path
 import pytest
 
 from yggdrasil.census import ProbeSet
-from yggdrasil.part1_gate import check_ci_and_no_docker
+from yggdrasil.part1_gate import (
+    README_PROGRESS_END,
+    README_PROGRESS_START,
+    check_ci_and_no_docker,
+)
 from yggdrasil.part2_gate import (
     CITIZENS,
     PART2_DELIVERABLES,
@@ -171,5 +175,9 @@ def test_a_touched_readme_fails_the_gate(tmp_path):
 
 
 def test_the_founding_readme_is_untouched():
-    digest = hashlib.md5((ROOT / "README.md").read_bytes()).hexdigest()
+    data = (ROOT / "README.md").read_bytes()
+    founding_spec, marker, appendix = data.partition(README_PROGRESS_START)
+    assert marker == README_PROGRESS_START
+    assert appendix.endswith(README_PROGRESS_END)
+    digest = hashlib.md5(founding_spec).hexdigest()
     assert digest == README_MD5

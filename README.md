@@ -1221,3 +1221,96 @@ If you enjoy my open-source projects and want to help support continued developm
 Support is always appreciated, but never required. Using, sharing, testing, contributing to, or starring the projects helps too. 🖤⚙️ᚱ
 
 ---
+
+<!-- BEGIN YGGDRASIL PROGRESS REPORT (2026-11-06) -->
+## 🌳 Engineering Progress Report: November 6, 2026
+
+> **Living implementation snapshot, not a replacement for the founding specification above.** The original v3.1 architecture and WorldNet addendum remain intact. Their original **“Design Phase”** status describes the state when those documents were written, not the current state of the code. This appendix is a dated inspection of the repository, its source, tests, recorded runs, and Git history, and it does **not** declare a production release.
+
+### Current standing at a glance
+
+| Signal | Standing as of 2026-11-06 |
+| --- | --- |
+| Development phase | **Active implementation and validation**, not design-only; **pre-release / experimental** |
+| Roadmap | **72 of 244 numbered slices banked** across an 11-part plan (29.5% of slice count, **not** an estimate of engineering effort or release readiness) |
+| Milestone gates | **Part I / Y-020** (roots) complete; **Part II / Y-048** (node agents) complete; **Part III / Y-074** (real fabric gate) not yet reached |
+| Active work | **Part III, Ratatoskr fabric:** Y-049 through Y-072 banked (**24/26** Part III slices); **Y-073** next |
+| Last development merged to `main` | Commit [`6dbd448`](https://github.com/hrabanazviking/Yggdrasil-Distributed-Inference-System/commit/6dbd4482b2afdeeeffa213f7cd80237fcfd8b1ed), dated **2026-11-03 UTC**, merging the campaign through **Y-072** |
+| Code and tests visible in tree | **65 Python source files** in `src/yggdrasil/`, **64 test files**, **161 contract files**, **69 documentation files** |
+| Latest recorded test result | **1,029 passed** across 64 test files at Y-072; `ruff` clean, **as reported in the campaign ledger**; this review did **not** rerun the tests |
+| Real-network milestone | **Y-062:** three real nodes, three mutually authenticated TLS 1.3 links, **18 fabric messages** delivered, evaluated as `simulated: false` for **carriage** |
+| Packaging / operations | Python **3.11+**, `yggdrasil-mesh` **0.0.1**, MIT license, native `systemd`, **no Docker** |
+| CI / releases | GitHub Actions workflow is **manual-dispatch only**; **no workflow runs or published releases** were visible at review time |
+| GitHub collaboration | `main` and `yrsa/growing-the-tree` exist; **one merged PR (#1)**, no open PRs and no issues visible at review time |
+
+The primary progress records are [CAMPAIGN_STATE.md](CAMPAIGN_STATE.md), the [244-slice roadmap](docs/YGGDRASIL_BUILD_ROADMAP_2026-10-30.md), and the machine-readable [campaign.json](data/campaign.json). **“Banked” means a slice has an implementation and its recorded acceptance evidence; it does not mean the complete system is production-ready.**
+
+### What has actually been built
+
+| Area | Code and evidence now in the repository | Status / boundary |
+| --- | --- | --- |
+| **Roots, contracts, governance** | Versioned JSON schemas, data manifest, nine-world role catalog, ADRs, provenance and threat registers, observable event contracts, deterministic multi-node simulator, CLI skeleton; [Part I gate](docs/PART_I_GATE.md) | **Y-001–Y-020 banked.** Foundational checks were performed at the original gate. |
+| **Node agent and capability detection** | [NodeAgent](src/yggdrasil/node_agent.py), [census](src/yggdrasil/census.py), [Ed25519 identity](src/yggdrasil/identity.py), [resource governor](src/yggdrasil/governor.py), health and liveness, local queue, journal, sandbox, failure classification, power telemetry, graceful degradation | **Implemented and exercised** in unit/integration tests; many operational services still use injected seams rather than a fully deployed mesh. |
+| **Local model integration** | [Aesir](src/yggdrasil/aesir_adapter.py), [Ollama](src/yggdrasil/ollama_adapter.py), and [llama.cpp / OpenAI-compatible](src/yggdrasil/openai_compat_adapter.py) adapters; model store with SHA-256 checks, quant fitness, model fetch, lifecycle and multi-engine hosting | **Adapter contracts and simulation demonstrated.** This is orchestration of external engines, **not** a new inference kernel. The Aesir adapter does not claim an embedding route it does not serve. |
+| **Device citizens** | [Pi 5](src/yggdrasil/pi_citizen.py), [CUDA laptop](src/yggdrasil/laptop_citizen.py), [CPU-only VM](src/yggdrasil/vm_citizen.py), [phone profile](src/yggdrasil/phone_citizen.py) | Pi, laptop and VM shapes have **recorded live-device checks**. Phone citizen is **built and simulated**, with no phone hardware execution proven. |
+| **Message fabric and trust** | [Fabric](src/yggdrasil/fabric.py), [mutual TLS](src/yggdrasil/tls_channels.py), [discovery](src/yggdrasil/discovery.py), [registry](src/yggdrasil/registry_service.py), [gossip](src/yggdrasil/gossip.py), [CRDT stores](src/yggdrasil/crdt_stores.py), [task channel](src/yggdrasil/task_channel.py), message signing and rate discipline | **Substantial Part III implementation.** Many convergence, partition and delivery properties are proven **in-process or with simulated time**, not yet as one resilient live hardware mesh. |
+| **Resilience and observability** | Partition reconciliation, store-and-forward, restart resync, registrar death drill, protocol versions, clock-skew judging, WAN-shaped simulation, fabric conformance, signed provenance, consent-gated audit feed, load-shape measurement | **Built in Y-058–Y-072**, mostly with simulated-network evidence. Y-073 failure drills and Y-074 fabric gate remain outstanding. |
+| **Sensitive task handling** | [Task guard](src/yggdrasil/task_security.py), [sealed payloads](src/yggdrasil/sealed_payloads.py) and [audit tap](src/yggdrasil/audit_tap.py) | **Implemented as experimental components.** The payload-sealing construction is bespoke pure Python, not externally audited or side-channel resistant. Do not present it as production cryptography. |
+
+### Evidence: measured hardware versus simulation
+
+**1. Real node checks, October 31.** Y-033, Y-034 and Y-035 record runs against the measured shapes of the Raspberry Pi 5 (`Mimir`), the CUDA laptop (`purplelongship`), and a CPU-only VM. The [Part II gate report](docs/PART_II_GATE.md) checks their integration against the same machine facts, but its conformance exercises use **injected transport/test doubles**: 16/16 Ollama checks for the Pi, 15 passed and one explicitly skipped embedding check for Aesir on the laptop, and 16/16 llama.cpp checks for the VM. **No live Aesir, Ollama or llama.cpp server is claimed by that gate.** Separately, the phone factory's profile and small-model constraints are tested; an actual phone run remains unproven.
+
+**2. Real secure carriage, November 2 (Y-062).** The [LAN fabric report](docs/LAN_FABRIC.md) records three participating machines: Pi 5, laptop and VM. The **Pi ↔ laptop** session ran over the **home LAN**; the **VM ↔ Pi** and **VM ↔ laptop** sessions ran over a **tailnet through a runtime proxy**, not over the home LAN. All three links negotiated **TLS 1.3** with peer authentication, exchanged discovery announcements, and transported **three messages in each direction per pair (18 total)**. The evaluated `lan_report` was **`proven`**, **3/3 pairs**, **zero application refusals**, with real carriage labelled `simulated: false`. Plaintext probes were rejected. Discovery in this run used **seed endpoints**, not a demonstrated mDNS broadcast. Crucially, the result demonstrates **network carriage**, **not** real distributed model inference, fully converged live registries under node kills, or a WorldNet deployment.
+
+**3. Simulated mesh and benchmark evidence.** The [transport decision](docs/TRANSPORT_BENCHMARK.md) selected a **minimal signed gossip** fabric over the simulated MQTT and NATS candidates; **no actual MQTT/NATS broker race on hardware** was performed. The [gossip](docs/GOSSIP.md), [partition](docs/PARTITION.md), [restart](docs/RESTART_RESILIENCE.md), [registrar death drill](docs/REGISTRAR_DEATH_DRILL.md), [WAN](docs/WAN_SIMULATION.md), and [conformance](docs/FABRIC_CONFORMANCE.md) work exercises real source components in **in-process/virtual conditions**, not a production deployment. The [Y-047 soak harness](docs/SOAK.md) drives **1,000 tasks** with controlled engines; it is not evidence of 1,000 real model generations on a hardware cluster.
+
+**4. Mesh overhead published at Y-072.** [Load Shapes](docs/LOAD_SHAPES.md) measured its own gossip/heartbeat protocol on a **virtual clock**:
+
+| Simulated nodes | Join + steady-window messages | Messages per node | Duplicated beats counted |
+| ---: | ---: | ---: | ---: |
+| 3 | 84 | 28 | 166 |
+| 10 | 660 | 66 | 5,170 |
+| 30 | 2,340 | 78 | 55,750 |
+
+These are **simulator counts**, not measured wire throughput, network bandwidth, tokens per second, or hardware efficiency. The 30-node duplication figure exposes a concrete gossip-overhead target for subsequent optimization.
+
+### Recent development and repository events
+
+- **2026-10-30:** [The Growing of the Tree roadmap](docs/YGGDRASIL_BUILD_ROADMAP_2026-10-30.md) established **244 numbered slices in 11 parts**, Python-first orchestration, native services rather than Docker, and explicit proof labels.
+- **2026-10-31:** Part I and Part II foundations were developed and banked, including citizens, adapters, model management, failure handling, conformance and soak infrastructure; the [Part II gate](docs/PART_II_GATE.md) was recorded as Y-048. [PR #1](https://github.com/hrabanazviking/Yggdrasil-Distributed-Inference-System/pull/1), `yrsa/growing-the-tree`, was merged.
+- **2026-10-31 to 2026-11-01:** Part III began: signed fabric, mutual TLS, discovery, replica registry, liveness, gossip, CRDT state, task channels and partition handling.
+- **2026-11-02:** Real-network **Y-062** trial documented; later slices added WAN simulation, observability, protocol compatibility, restart and death drills, clock discipline, conformance, sensitive-payload sealing, audit tap and load-shape reporting.
+- **2026-11-03 UTC:** `main` received [the merge through Y-072](https://github.com/hrabanazviking/Yggdrasil-Distributed-Inference-System/commit/6dbd4482b2afdeeeffa213f7cd80237fcfd8b1ed). At this review, `yrsa/growing-the-tree` pointed at Y-072 and did not contain later unmerged slices.
+- **2026-11-06:** This README appendix records the snapshot **without rewriting the original architecture**. There is no evidence in the inspected default-branch history of Y-073 or later being banked.
+
+### Test, CI and reproducibility honesty
+
+The [campaign state ledger](CAMPAIGN_STATE.md) records **1,029 passing tests across all 64 test files**, with `ruff` clean for Y-072. Its account is unusually detailed: earlier full-suite attempts were interrupted by **EDQUOT (storage quota), workspace contention and session/VM problems**, and the final count was reconstructed from **completed, non-overlapping batches and decisive reruns**. The named verification logs reside in the development environment rather than being published as CI artifacts in this repo. Accordingly, these numbers are **reported historical verification**, **not independent results of this README review**. The [workflow](.github/workflows/ci.yml) can run the checks on demand but deliberately has only `workflow_dispatch`, not automatic push/PR triggers. No GitHub Actions runs were visible when this snapshot was made.
+
+For a fresh independent check on a machine with Python 3.11+ and sufficient space:
+
+```bash
+python -m pip install -e ".[dev]"
+ruff check src tests
+pytest -q
+```
+
+The tests can be resource-intensive, and the gate suites create scratch trees. Use a writable temporary directory with plenty of space. A green local test suite validates the code under its test doubles; **real-node, real-engine and network deployment acceptance must still be reported separately**.
+
+### Remaining gaps and the immediate road
+
+1. **Y-073, next:** run and document the planned failure drills: **node death mid-task, partition during a result stream, and corrupt-message injection**, with an explicit recovery verdict for each. These are not yet marked banked.
+2. **Y-074, Part III gate:** prove that the **three real citizens plus ten simulated nodes** retain/recover one registry truth through kills and a partition. This is a specific missing acceptance gate; the earlier Y-062 real-carriage proof is not a substitute.
+3. **Part IV, Y-075–Y-100:** build **Verðandi**, the actual global task lifecycle, capability and load-aware scheduler, semantic routing, failover and placement explanation. Existing queue, census and task-channel pieces provide foundations; **the full scheduler is not yet delivered**.
+4. **Parts V–VII:** implement **Urðr** memory/knowledge ancestry, **Skuld** invariant and future-impact verification, and multi-model ensemble reasoning. Their extensive pseudocode in the founding README is **design**, not delivered production functionality.
+5. **Parts VIII–XI:** broaden live hardware proof, integrate the workshop services (including Aesir and Hermes), explore WorldNet as research, then complete chaos, performance, security and release gates. A public, planetary inference mesh is **not** currently demonstrated.
+6. **Security and operations before real sensitive workloads:** replace or independently audit the pure-Python signature/sealing primitives and nonstandard HMAC-stream encryption, verify key management and threat controls, run real engine/transport stress tests, capture repeatable CI artifacts, and establish release/deployment documentation. **TLS 1.3 carriage proof is valuable but is not a full security audit.**
+
+**Current assessment:** the project has developed a meaningful **node-agent and secure-transport prototype with unusually thorough contracts and simulation evidence**. Its most important next transition is from individually proven pieces and a three-machine real-carriage test to a **failure-tolerant, integrated, multi-node inference system** with a real scheduler and reproducible hardware evidence. The tree is growing; its branches should keep their proof labels attached.
+
+*Read next:* [Campaign ledger](CAMPAIGN_STATE.md) · [Full roadmap](docs/YGGDRASIL_BUILD_ROADMAP_2026-10-30.md) · [Part II gate](docs/PART_II_GATE.md) · [Real LAN trial](docs/LAN_FABRIC.md) · [Load shapes](docs/LOAD_SHAPES.md).
+
+---
+
+<!-- END YGGDRASIL PROGRESS REPORT (2026-11-06) -->
